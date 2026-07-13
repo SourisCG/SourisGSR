@@ -3439,7 +3439,7 @@ static GtkWidget* create_common_settings_page(GtkStack *stack, GtkApplication *a
     gtk_widget_set_margin(GTK_WIDGET(general_grid), 10, 10, 10, 10);
     gtk_container_add(GTK_CONTAINER(general_frame), GTK_WIDGET(general_grid));
 
-    exclude_metadata_button = gtk_check_button_new_with_label("Exclude metadata from the video (such as audio track title)");
+    exclude_metadata_button = gtk_check_button_new_with_label("Exclude personal metadata from the video (such as audio track title)");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(exclude_metadata_button), false);
     gtk_widget_set_halign(exclude_metadata_button, GTK_ALIGN_START);
     gtk_grid_attach(general_grid, exclude_metadata_button, 0, general_area_row++, 2, 1);
