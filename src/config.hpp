@@ -37,7 +37,6 @@ struct MainConfig {
     std::string audio_codec;
     std::string framerate_mode;
     bool advanced_view = false;
-    bool overclock = false;
     bool show_recording_started_notifications = false;
     bool show_recording_stopped_notifications = false;
     bool show_recording_saved_notifications = true;
@@ -48,6 +47,7 @@ struct MainConfig {
     bool av1_amd_bug_warning_shown = false;
     bool restore_portal_session = true;
     bool use_new_ui = false;
+    bool exclude_metadata = false;
     int32_t installed_gsr_global_hotkeys_version = 0;
 };
 
@@ -324,7 +324,6 @@ static std::map<std::string, ConfigValue> get_config_options(Config &config) {
         {"main.audio_codec", {CONFIG_TYPE_STRING, &config.main_config.audio_codec}},
         {"main.framerate_mode", {CONFIG_TYPE_STRING, &config.main_config.framerate_mode}},
         {"main.advanced_view", {CONFIG_TYPE_BOOL, &config.main_config.advanced_view}},
-        {"main.overclock", {CONFIG_TYPE_BOOL, &config.main_config.overclock}},
         {"main.show_recording_started_notifications", {CONFIG_TYPE_BOOL, &config.main_config.show_recording_started_notifications}},
         {"main.show_recording_stopped_notifications", {CONFIG_TYPE_BOOL, &config.main_config.show_recording_stopped_notifications}},
         {"main.show_recording_saved_notifications", {CONFIG_TYPE_BOOL, &config.main_config.show_recording_saved_notifications}},
@@ -335,6 +334,7 @@ static std::map<std::string, ConfigValue> get_config_options(Config &config) {
         {"main.av1_amd_bug_warning_shown", {CONFIG_TYPE_BOOL, &config.main_config.av1_amd_bug_warning_shown}},
         {"main.restore_portal_session", {CONFIG_TYPE_BOOL, &config.main_config.restore_portal_session}},
         {"main.use_new_ui", {CONFIG_TYPE_BOOL, &config.main_config.use_new_ui}},
+        {"main.exclude_metadata", {CONFIG_TYPE_BOOL, &config.main_config.exclude_metadata}},
         {"main.installed_gsr_global_hotkeys_version", {CONFIG_TYPE_I32, &config.main_config.installed_gsr_global_hotkeys_version}},
 
         {"streaming.service", {CONFIG_TYPE_STRING, &config.streaming_config.streaming_service}},

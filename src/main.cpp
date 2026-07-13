@@ -101,9 +101,11 @@ static GtkWidget *streaming_start_stop_hotkey_button;
 static GtkWidget *record_app_audio_inverted_button;
 static GtkWidget *split_audio_button;
 static GtkFrame *notifications_frame;
+static GtkFrame *general_frame;
 static GtkWidget *show_recording_started_notification_button;
 static GtkWidget *show_recording_stopped_notification_button;
 static GtkWidget *show_recording_saved_notification_button;
+static GtkWidget *exclude_metadata_button;
 static GtkWidget *record_cursor_button;
 static GtkWidget *restore_portal_session_button;
 static GtkGrid *audio_devices_grid;
@@ -115,8 +117,6 @@ static GtkGrid *color_range_grid;
 static GtkGrid *framerate_mode_grid;
 static GtkGrid *video_bitrate_grid;
 static GtkComboBoxText *view_combo_box;
-static GtkGrid *overclock_grid;
-static GtkWidget *overclock_button;
 static GtkGrid *recording_bottom_panel_grid;
 static GtkWidget *recording_record_time_label;
 static GtkWidget *recording_record_icon;
@@ -930,10 +930,10 @@ static void save_configs() {
     config.main_config.audio_codec = gtk_combo_box_get_active_id(GTK_COMBO_BOX(audio_codec_input_menu));
     config.main_config.framerate_mode = gtk_combo_box_get_active_id(GTK_COMBO_BOX(framerate_mode_input_menu));
     config.main_config.advanced_view = strcmp(gtk_combo_box_get_active_id(GTK_COMBO_BOX(view_combo_box)), "advanced") == 0;
-    config.main_config.overclock = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(overclock_button));
     config.main_config.show_recording_started_notifications = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_recording_started_notification_button));
     config.main_config.show_recording_stopped_notifications = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_recording_stopped_notification_button));
     config.main_config.show_recording_saved_notifications = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(show_recording_saved_notification_button));
+    config.main_config.exclude_metadata = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(exclude_metadata_button));
     config.main_config.record_cursor = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(record_cursor_button));
     config.main_config.hide_window_when_recording = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(hide_window_when_recording_menu_item));
     config.main_config.restore_portal_session = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(restore_portal_session_button));
@@ -1872,6 +1872,7 @@ static gboolean on_start_replay_button_click(GtkButton *button, gpointer userdat
     const gchar* quality_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(quality_input_menu));
     const gchar* audio_codec_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(audio_codec_input_menu));
     const gchar* framerate_mode_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(framerate_mode_input_menu));
+    const bool exclude_metadata = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(exclude_metadata_button));
     const bool record_cursor = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(record_cursor_button));
     const bool restore_portal_session = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(restore_portal_session_button));
     const std::string video_bitrate_str = std::to_string(gtk_spin_button_get_value_as_int(video_bitrate_entry));
@@ -1900,10 +1901,12 @@ static gboolean on_start_replay_button_click(GtkButton *button, gpointer userdat
         "gpu-screen-recorder", "-w", window_str.c_str(), "-c", container_str, "-k", video_codec_input_str.c_str(), "-ac", audio_codec_input_str, "-f", fps_str.c_str(), "-cursor", record_cursor ? "yes" : "no", "-restore-portal-session", restore_portal_session ? "yes" : "no", "-cr", color_range_input_str, "-r", replay_time_str.c_str(), "-encoder", encoder, "-o", dir
     };
 
-    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
+    if(exclude_metadata) {
+        args.push_back("-exclude-metadata");
+        args.push_back("yes");
+    }
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(overclock_button)))
-        args.insert(args.end(), { "-oc", "yes" });
+    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
 
     if(strcmp(framerate_mode_input_str, "auto") != 0)
         args.insert(args.end(), { "-fm", framerate_mode_input_str });
@@ -2070,6 +2073,7 @@ static gboolean on_start_recording_button_click(GtkButton *button, gpointer user
     const gchar* quality_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(quality_input_menu));
     const gchar* audio_codec_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(audio_codec_input_menu));
     const gchar* framerate_mode_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(framerate_mode_input_menu));
+    const bool exclude_metadata = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(exclude_metadata_button));
     const bool record_cursor = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(record_cursor_button));
     const bool restore_portal_session = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(restore_portal_session_button));
     const std::string video_bitrate_str = std::to_string(gtk_spin_button_get_value_as_int(video_bitrate_entry));
@@ -2108,10 +2112,12 @@ static gboolean on_start_recording_button_click(GtkButton *button, gpointer user
         "gpu-screen-recorder", "-w", window_str.c_str(), "-c", container_str, "-k", video_codec_input_str.c_str(), "-ac", audio_codec_input_str, "-f", fps_str.c_str(), "-cursor", record_cursor ? "yes" : "no", "-restore-portal-session", restore_portal_session ? "yes" : "no", "-cr", color_range_input_str, "-encoder", encoder, "-o", record_file_current_filename.c_str()
     };
 
-    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
+    if(exclude_metadata) {
+        args.push_back("-exclude-metadata");
+        args.push_back("yes");
+    }
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(overclock_button)))
-        args.insert(args.end(), { "-oc", "yes" });
+    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
 
     if(strcmp(framerate_mode_input_str, "auto") != 0)
         args.insert(args.end(), { "-fm", framerate_mode_input_str });
@@ -2262,6 +2268,7 @@ static gboolean on_start_streaming_button_click(GtkButton *button, gpointer user
     const gchar* color_range_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(color_range_input_menu));
     const gchar* audio_codec_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(audio_codec_input_menu));
     const gchar* framerate_mode_input_str = gtk_combo_box_get_active_id(GTK_COMBO_BOX(framerate_mode_input_menu));
+    const bool exclude_metadata = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(exclude_metadata_button));
     const bool record_cursor = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(record_cursor_button));
     const bool restore_portal_session = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(restore_portal_session_button));
     const std::string video_bitrate_str = std::to_string(gtk_spin_button_get_value_as_int(video_bitrate_entry));
@@ -2290,10 +2297,12 @@ static gboolean on_start_streaming_button_click(GtkButton *button, gpointer user
         "gpu-screen-recorder", "-w", window_str.c_str(), "-c", container_str, "-k", video_codec_input_str.c_str(), "-ac", audio_codec_input_str, "-f", fps_str.c_str(), "-cursor", record_cursor ? "yes" : "no", "-restore-portal-session", restore_portal_session ? "yes" : "no", "-cr", color_range_input_str, "-encoder", encoder, "-o", stream_url.c_str()
     };
 
-    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
+    if(exclude_metadata) {
+        args.push_back("-exclude-metadata");
+        args.push_back("yes");
+    }
 
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(overclock_button)))
-        args.insert(args.end(), { "-oc", "yes" });
+    add_quality_command_line_args(args, quality_input_str, video_bitrate_str.c_str());
 
     if(strcmp(framerate_mode_input_str, "auto") != 0)
         args.insert(args.end(), { "-fm", framerate_mode_input_str });
@@ -2398,8 +2407,8 @@ static void view_combo_box_change_callback(GtkComboBox *widget, gpointer userdat
     gtk_widget_set_visible(GTK_WIDGET(video_codec_grid), advanced_view);
     gtk_widget_set_visible(GTK_WIDGET(audio_codec_grid), advanced_view);
     gtk_widget_set_visible(GTK_WIDGET(framerate_mode_grid), advanced_view);
-    gtk_widget_set_visible(GTK_WIDGET(overclock_grid), advanced_view && gsr_info.gpu_info.vendor == GpuVendor::NVIDIA && gsr_info.system_info.display_server != DisplayServer::WAYLAND);
     gtk_widget_set_visible(GTK_WIDGET(notifications_frame), advanced_view);
+    gtk_widget_set_visible(GTK_WIDGET(general_frame), advanced_view);
     gtk_widget_set_visible(GTK_WIDGET(split_audio_button), advanced_view);
 }
 
@@ -2953,6 +2962,7 @@ static GtkWidget* create_common_settings_page(GtkStack *stack, GtkApplication *a
     int audio_input_area_row = 0;
     int video_input_area_row = 0;
     int notifications_area_row = 0;
+    int general_area_row = 0;
 
     GtkGrid *simple_advanced_grid = GTK_GRID(gtk_grid_new());
     gtk_grid_set_column_spacing(simple_advanced_grid, 10);
@@ -3382,37 +3392,10 @@ static GtkWidget* create_common_settings_page(GtkStack *stack, GtkApplication *a
     gtk_combo_box_text_append(framerate_mode_input_menu, "auto", "Auto (Recommended)");
     gtk_combo_box_text_append(framerate_mode_input_menu, "cfr", "Constant");
     gtk_combo_box_text_append(framerate_mode_input_menu, "vfr", "Variable");
+    gtk_combo_box_text_append(framerate_mode_input_menu, "content", "Sync to content (Only X11 or desktop portal capture)");
     gtk_widget_set_hexpand(GTK_WIDGET(framerate_mode_input_menu), true);
     gtk_grid_attach(framerate_mode_grid, GTK_WIDGET(framerate_mode_input_menu), 1, 0, 1, 1);
     gtk_combo_box_set_active(GTK_COMBO_BOX(framerate_mode_input_menu), 0);
-
-    overclock_grid = GTK_GRID(gtk_grid_new());
-    gtk_grid_attach(video_grid, GTK_WIDGET(overclock_grid), 0, video_input_area_row++, 2, 1);
-    overclock_button = gtk_check_button_new_with_label("Overclock memory transfer rate to workaround NVIDIA driver performance bug");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(overclock_button), false);
-    gtk_widget_set_halign(overclock_button, GTK_ALIGN_START);
-    gtk_grid_attach(overclock_grid, overclock_button, 0, 0, 1, 1);
-    GtkButton *overclock_info_button = GTK_BUTTON(gtk_button_new_with_label("?"));
-    gtk_grid_attach(overclock_grid, GTK_WIDGET(overclock_info_button), 1, 0, 1, 1);
-
-    g_signal_connect(overclock_info_button, "clicked", G_CALLBACK(+[](GtkButton *button, gpointer userdata){
-        (void)button;
-        (void)userdata;
-        GtkWidget *dialog = gtk_message_dialog_new_with_markup(GTK_WINDOW(window), GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-            "NVIDIA driver has a \"feature\" (read: bug) where it will downclock memory transfer rate when a program uses CUDA, such as GPU Screen Recorder.\n"
-            "To work around this bug, GPU Screen Recorder can overclock your GPU memory transfer rate to it's normal optimal level. To enable overclocking for optimal performance enable the \"Overclock memory transfer rate to workaround NVIDIA driver performance bug\" option.\n"
-            "You also need to have \"Coolbits\" NVIDIA X setting set to \"12\" to enable overclocking.\n"
-            "You can set coolbits by running \"sudo nvidia-xconfig --cool-bits=12\" and then rebooting.\n"
-            "\n"
-            "Note that this only works when Xorg server is running as root.\n"
-            "\n"
-            "Note! use at your own risk!");
-        set_dialog_selectable(dialog);
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-
-        return true;
-    }), nullptr);
 
     record_cursor_button = gtk_check_button_new_with_label("Record cursor");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(record_cursor_button), true);
@@ -3444,6 +3427,22 @@ static GtkWidget* create_common_settings_page(GtkStack *stack, GtkApplication *a
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_recording_saved_notification_button), true);
     gtk_widget_set_halign(show_recording_saved_notification_button, GTK_ALIGN_START);
     gtk_grid_attach(notifications_grid, show_recording_saved_notification_button, 0, notifications_area_row++, 2, 1);
+
+    general_frame = GTK_FRAME(gtk_frame_new("General"));
+    gtk_grid_attach(grid, GTK_WIDGET(general_frame), 0, grid_row++, 2, 1);
+
+    GtkGrid *general_grid = GTK_GRID(gtk_grid_new());
+    gtk_widget_set_vexpand(GTK_WIDGET(general_grid), false);
+    gtk_widget_set_hexpand(GTK_WIDGET(general_grid), true);
+    gtk_grid_set_row_spacing(general_grid, 10);
+    gtk_grid_set_column_spacing(general_grid, 10);
+    gtk_widget_set_margin(GTK_WIDGET(general_grid), 10, 10, 10, 10);
+    gtk_container_add(GTK_CONTAINER(general_frame), GTK_WIDGET(general_grid));
+
+    exclude_metadata_button = gtk_check_button_new_with_label("Exclude metadata from the video (such as audio track title)");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(exclude_metadata_button), false);
+    gtk_widget_set_halign(exclude_metadata_button, GTK_ALIGN_START);
+    gtk_grid_attach(general_grid, exclude_metadata_button, 0, general_area_row++, 2, 1);
 
     GtkGrid *start_button_grid = GTK_GRID(gtk_grid_new());
     gtk_grid_attach(main_grid, GTK_WIDGET(start_button_grid), 0, main_grid_row++, 2, 1);
@@ -4216,10 +4215,10 @@ static void load_config() {
     video_codec_selection_menu_set_active_id(config.main_config.codec.c_str());
     gtk_combo_box_set_active_id(GTK_COMBO_BOX(audio_codec_input_menu), config.main_config.audio_codec.c_str());
     gtk_combo_box_set_active_id(GTK_COMBO_BOX(framerate_mode_input_menu), config.main_config.framerate_mode.c_str());
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(overclock_button), config.main_config.overclock);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_recording_started_notification_button), config.main_config.show_recording_started_notifications);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_recording_stopped_notification_button), config.main_config.show_recording_stopped_notifications);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(show_recording_saved_notification_button), config.main_config.show_recording_saved_notifications);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(exclude_metadata_button), config.main_config.exclude_metadata);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(record_cursor_button), config.main_config.record_cursor);
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(hide_window_when_recording_menu_item), config.main_config.hide_window_when_recording);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(restore_portal_session_button), config.main_config.restore_portal_session);
