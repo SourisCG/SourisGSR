@@ -266,7 +266,8 @@ enum class GpuVendor {
     AMD,
     INTEL,
     NVIDIA,
-    BROADCOM
+    BROADCOM,
+    APPLE
 };
 
 struct GpuInfo {
@@ -2672,6 +2673,8 @@ static void parse_gpu_info_line(GsrInfo *_gsr_info, const std::string &line) {
             _gsr_info->gpu_info.vendor = GpuVendor::NVIDIA;
         else if(attribute_value == "broadcom")
             _gsr_info->gpu_info.vendor = GpuVendor::BROADCOM;
+        else if(attribute_value == "apple")
+            _gsr_info->gpu_info.vendor = GpuVendor::APPLE;
     }
 }
 
@@ -4318,6 +4321,7 @@ static const char* gpu_vendor_to_name(GpuVendor vendor) {
         case GpuVendor::INTEL:    return "Intel";
         case GpuVendor::NVIDIA:   return "NVIDIA";
         case GpuVendor::BROADCOM: return "Broadcom";
+        case GpuVendor::APPLE:    return "Apple";
     }
     return "";
 }
