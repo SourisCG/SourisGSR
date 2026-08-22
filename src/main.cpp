@@ -2862,7 +2862,8 @@ static bool kms_server_proxy_setup_gsr_ui(const char *msg) {
         gtk_widget_destroy(dialog);
 
         config.main_config.use_new_ui = false;
-        save_configs();
+        // save_config instead of save_configs because this can run at startup (startup_new_ui), before the widgets that save_configs reads are created
+        save_config(config);
         return false;
     }
 
