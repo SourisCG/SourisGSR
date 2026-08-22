@@ -8,7 +8,7 @@ There is a new alternative UI for GPU Screen Recorder in the style of ShadowPlay
 The program has to be launched from your application launcher or hotkeys may not work properly in your Wayland compositor (this is the case with GNOME).
 
 ## Deprecation
-This project is no longer being developed as it has been superseded by [GPU Screen Recorder UI](https://git.dec05eba.com/gpu-screen-recorder-ui/) which has more features. This project will remain available until GPU Screen Recorder UI can run as a regular window, just like GPU Screen Recorder GTK does.\
+This project is no longer being developed as it has been superseded by [GPU Screen Recorder UI](https://git.dec05eba.com/gpu-screen-recorder-ui/) which has more features. This means that this project will only receive bug fixes and no feature updates. This project will remain available until GPU Screen Recorder UI can run as a regular window, just like GPU Screen Recorder GTK does.\
 The `com.dec05eba.gpu_screen_recorder.appdata.xml` file has been moved to the [AppData](https://git.dec05eba.com/gpu-screen-recorder-appdata/) repository.
 
 # Installation
