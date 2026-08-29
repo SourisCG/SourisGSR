@@ -169,7 +169,6 @@ static AppIndicator *app_indicator;
 
 static gsr_global_shortcuts global_shortcuts;
 static bool global_shortcuts_initialized = false;
-static bool global_shortcuts_received = false;
 
 struct AudioInput {
     std::string name;
@@ -295,9 +294,55 @@ static GsrInfoExitStatus gsr_info_exit_status;
 enum class WaylandCompositor {
     UNKNOWN,
     HYPRLAND,
-    KDE // kwin
+    KDE_OLD, // kwin
+    KDE_NEW  // kwin 6.7.4 or newer
 };
 static WaylandCompositor wayland_compositor = WaylandCompositor::UNKNOWN;
+
+static bool wayland_compositor_is_kde(WaylandCompositor wayland_compositor) {
+    return wayland_compositor == WaylandCompositor::KDE_OLD || wayland_compositor == WaylandCompositor::KDE_NEW;
+}
+
+static int make_version(int major, int minor, int patch) {
+    return major * 10000 + minor * 100 + patch;
+}
+
+// Returns 0 if the kwin version couldn't be retrieved
+static int kwin_get_version() {
+    GDBusConnection *gdbus_con = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if(!gdbus_con) {
+        fprintf(stderr, "Warning: kwin_get_version: failed to connect to the session dbus\n");
+        return 0;
+    }
+
+    // KWin doesn't expose its version directly, the only way to get it is from this support information text
+    GVariant *ret = g_dbus_connection_call_sync(gdbus_con, "org.kde.KWin", "/KWin", "org.kde.KWin", "supportInformation", NULL, G_VARIANT_TYPE("(s)"), G_DBUS_CALL_FLAGS_NO_AUTO_START, 1000, NULL, NULL);
+    if(!ret) {
+        fprintf(stderr, "Warning: kwin_get_version: org.kde.KWin.supportInformation dbus call failed\n");
+        g_object_unref(gdbus_con);
+        return 0;
+    }
+
+    int version = 0;
+    const char *support_information = NULL;
+    g_variant_get(ret, "(&s)", &support_information);
+    if(support_information) {
+        const char *version_prefix = "KWin version: ";
+        const char *version_str = strstr(support_information, version_prefix);
+        int major = 0;
+        int minor = 0;
+        int patch = 0;
+        if(version_str && sscanf(version_str + strlen(version_prefix), "%d.%d.%d", &major, &minor, &patch) >= 2)
+            version = make_version(major, minor, patch);
+    }
+
+    if(version == 0)
+        fprintf(stderr, "Warning: kwin_get_version: failed to find the kwin version in the kwin support information\n");
+
+    g_variant_unref(ret);
+    g_object_unref(gdbus_con);
+    return version;
+}
 
 struct Container {
     const char *container_name;
@@ -975,7 +1020,7 @@ static void show_notification(GtkApplication *app, const char *title, const char
 
     // KDE doesn't show notifications when using desktop portal capture unless either DoNotDisturb.WhenScreenSharing kde config
     // has been changed by the user or if the priority for the notification is set as urgent
-    if((recording || replaying || streaming) && wayland_compositor == WaylandCompositor::KDE)
+    if((recording || replaying || streaming) && wayland_compositor_is_kde(wayland_compositor))
         priority = G_NOTIFICATION_PRIORITY_URGENT;
 
     fprintf(stderr, "Notification: title: %s, body: %s\n", title, body);
@@ -1474,7 +1519,6 @@ static void replace_meta_with_super(std::string &str) {
 
 static void shortcut_changed_callback(gsr_shortcut shortcut, void *userdata) {
     (void)userdata;
-    global_shortcuts_received = true;
     std::string trigger = shortcut.trigger_description;
     replace_meta_with_super(trigger);
     for(int i = 0; i < num_hotkeys; ++i) {
@@ -1523,8 +1567,8 @@ static void register_global_shortcuts_once() {
     static bool registered = false;
     // On KDE plasma the shortcut menu popup will show up everytime this is used, so we dont want to call it everytime.
     // On Hyprland the global shortcut desktop portal is broken on older versions and crashes the desktop portal.
-    // On GNOME this needs to be called everytime to register the shortcuts. The shortcut popup menu will show the first time only.
-    if(wayland_compositor == WaylandCompositor::UNKNOWN && !registered && !global_shortcuts_received) {
+    // On GNOME and KDE 6.7.4+ this needs to be called everytime to register the shortcuts. The shortcut popup menu will show the first time only.
+    if((wayland_compositor == WaylandCompositor::UNKNOWN || wayland_compositor == WaylandCompositor::KDE_NEW) && !registered) {
         registered = true;
         on_register_hotkeys_button_clicked(nullptr, nullptr);
     }
@@ -1606,7 +1650,8 @@ static gboolean on_start_streaming_click(GtkButton*, gpointer userdata) {
 static gboolean on_streaming_recording_replay_page_back_click(GtkButton*, gpointer userdata) {
     PageNavigationUserdata *_page_navigation_userdata = (PageNavigationUserdata*)userdata;
     gtk_stack_set_visible_child(_page_navigation_userdata->stack, _page_navigation_userdata->common_settings_page);
-    ungrab_keys(gdk_x11_get_default_xdisplay());
+    if(gsr_info.system_info.display_server != DisplayServer::WAYLAND)
+        ungrab_keys(gdk_x11_get_default_xdisplay());
     hotkey_mode = HotkeyMode::NoAction;
     app_indicator_set_menu(app_indicator, GTK_MENU(create_systray_menu(_page_navigation_userdata->app, SystrayPage::FRONT)));
     return true;
@@ -3501,7 +3546,7 @@ static void add_wayland_global_hotkeys_ui(GtkGrid *grid, int &row, int width) {
     gtk_grid_attach(grid, GTK_WIDGET(aa_grid), 0, row++, width, 1);
     gtk_grid_set_column_spacing(aa_grid, 10);
 
-    if(wayland_compositor == WaylandCompositor::KDE) {
+    if(wayland_compositor == WaylandCompositor::KDE_OLD) {
         gtk_grid_attach(aa_grid, gtk_label_new("Hotkeys are managed externally on KDE Plasma Wayland. Click here to change hotkeys:"), 0, 0, 1, 1);
 
         GtkButton *register_hotkeys_button = GTK_BUTTON(gtk_button_new_with_label("Change hotkeys"));
@@ -4431,7 +4476,10 @@ static void activate(GtkApplication *app, gpointer) {
         if(gdk_wayland_display_query_registry(gdk_display_get_default(), "hyprland_global_shortcuts_manager_v1")) {
             wayland_compositor = WaylandCompositor::HYPRLAND;
         } else if(gdk_wayland_display_query_registry(gdk_display_get_default(), "org_kde_plasma_shell")) {
-            wayland_compositor = WaylandCompositor::KDE;
+            if(kwin_get_version() >= make_version(6, 7, 4))
+                wayland_compositor = WaylandCompositor::KDE_NEW;
+            else
+                wayland_compositor = WaylandCompositor::KDE_OLD;
         }
     }
 
