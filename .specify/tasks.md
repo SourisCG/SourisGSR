@@ -20,6 +20,9 @@ Conventions: each task lists spec ref + test command. DONE = green.
 
 ## NEXT (strict order after skeleton is green)
 
+- [x] T13a i18n Catalog API (`Lang`, `resolve_lang`, `Catalog`, `fill`) + 48 help/error
+  keys EN/ES + `catalog.rs` tests (enables T10 localized errors).
+  Test: `cargo test -p gsr-i18n` (8 passed).
 - [ ] T10 `core/cli+config` unit tests (valid/invalid, en/es `--help`).
   Test: `cargo test -p gsr-core cli`.
 - [ ] T11 `core/replay` ring tests (`replay*.rs` vs `replay_buffer/*.c`).
