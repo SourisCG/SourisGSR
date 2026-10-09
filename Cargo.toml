@@ -7,5 +7,7 @@ members = [
     "crates/i18n",
     "crates/kms-server",
     "crates/plugin",
+    "crates/test-plugin",
+    "crates/test-plugin-nosymbols",
 ]
 resolver = "2"

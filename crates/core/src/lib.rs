@@ -9,6 +9,7 @@ pub mod cli;
 pub mod config;
 pub mod library;
 pub mod muxer;
+pub mod plugins;
 pub mod replay;
 pub mod replay_disk;
 pub mod replay_ram;

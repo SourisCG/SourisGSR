@@ -14,5 +14,13 @@ path = "src/lib.rs"
 
 [dependencies]
 gsr-i18n = { path = "../i18n" }
+gsr-plugin = { path = "../plugin" }
+# dlopen for -p overlay plugins (mirrors dlopen/dlsym in src/plugins.c).
+libloading = "0.8"
 # Pure-Rust PNG/JPEG writers for screenshots (mirrors stb_image_write in C).
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+
+[dev-dependencies]
+# Test-only cdylib fixtures, built alongside the test targets that load them.
+gsr-test-plugin = { path = "../test-plugin" }
+gsr-test-plugin-nosymbols = { path = "../test-plugin-nosymbols" }

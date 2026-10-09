@@ -38,8 +38,11 @@ Conventions: each task lists spec ref + test command. DONE = green.
   lint with allowlist). Prefixes `gsr error/warning/info` + script errors
   moved into locales. Coverage: 90.49% overall, core-src 86.8%,
   i18n-src 89% (tarpaulin, gate >=80%).
-- [ ] T14 plugins (`-p` load + triangle example vs `plugin/plugin.h`).
-  Test: `cargo test -p gsr-plugin`.
+- [x] T14 plugins (`-p` load + triangle example vs `plugin/plugin.h`).
+  Test: `cargo test -p gsr-core plugin` (6 passed: ABI layout, real `.so`
+  load/draw/unload, missing-file/symbol errors, init validation, ES).
+  Manager in `core/src/plugins.rs`, C ABI in `crates/plugin/src/abi.rs`,
+  fixtures in `crates/test-plugin{,-nosymbols}` (approved libloading dep).
 - [ ] T20 `kms-server` (socket + `SCM_RIGHTS`, protocol v5, caps) + security test.
   Test: `cargo test -p gsr-kms-server`.
 - [ ] T21 KMS capturer mock + zero-copy guard (vs `src/capture/kms.c`).

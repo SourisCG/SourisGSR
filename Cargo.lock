@@ -80,7 +80,11 @@ name = "gsr-core"
 version = "0.1.0"
 dependencies = [
  "gsr-i18n",
+ "gsr-plugin",
+ "gsr-test-plugin",
+ "gsr-test-plugin-nosymbols",
  "image",
+ "libloading",
 ]
 
 [[package]]
@@ -100,6 +104,17 @@ name = "gsr-plugin"
 version = "0.1.0"
 
 [[package]]
+name = "gsr-test-plugin"
+version = "0.1.0"
+dependencies = [
+ "gsr-plugin",
+]
+
+[[package]]
+name = "gsr-test-plugin-nosymbols"
+version = "0.1.0"
+
+[[package]]
 name = "image"
 version = "0.25.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -112,6 +127,16 @@ dependencies = [
  "png",
  "zune-core",
  "zune-jpeg",
+]
+
+[[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
 ]
 
 [[package]]
@@ -177,6 +202,12 @@ name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
+
+[[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
 name = "zlib-rs"
