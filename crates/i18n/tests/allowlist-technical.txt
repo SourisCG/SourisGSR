@@ -18,5 +18,37 @@ packet index out of range
 # err_screenshot_write message (T20 wiring), details stay diagnostic.
 unsupported screenshot extension
 screenshot dimensions must be non-zero
-# kms-server skeleton notice; replaced by the real helper in T20.
-skeleton helper, see
+
+# --- T20: KMS helper daemon diagnostics (DEVIATION-HELPER-LOGS, spec-02 §5).
+# The privileged daemon logs English to stderr like the C original; every
+# user-facing CLI message surfaces localized through the client.
+usage: gsr-kms-server
+kms server error: failed to send response
+kms server error: failed to receive request
+kms server error: bad request
+REPLACE_CONNECTION without exactly one fd
+kms server error: failed to open
+failed to enable UNIVERSAL_PLANES
+failed to enable ATOMIC, wrong monitor may be captured
+kms server error: failed to connect to
+only supported on Linux
+
+# --- T20: protocol/transport diagnostics. These surface only inside the
+# localized err_kms_* wrappers (same as C, which prints English details);
+# the actionable prefix/message is translated.
+unsupported protocol version
+unknown request type
+unknown result code
+unknown rotation
+too many items:
+too many DMA-BUFs:
+short control buffer
+short sendmsg write
+peer closed the socket
+malformed SCM_RIGHTS message
+too many ancillary fds
+socket path too long
+no capturing planes found
+failed to get DRM resources
+failed to list planes
+exit {status}

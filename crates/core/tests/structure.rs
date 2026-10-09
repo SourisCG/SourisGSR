@@ -85,7 +85,10 @@ fn mapped_folders_exist() {
     // Helper mirrors kms/server/kms_server.c; plugin mirrors plugin/plugin.h.
     for f in [
         "crates/kms-server/src/main.rs",
+        "crates/kms-server/src/lib.rs",
         "crates/kms-server/src/protocol.rs",
+        "crates/kms-server/src/transport.rs",
+        "crates/kms-server/src/grab.rs",
         "crates/plugin/src/lib.rs",
         "crates/plugin/src/abi.rs",
         "crates/test-plugin/src/lib.rs",

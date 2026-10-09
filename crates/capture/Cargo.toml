@@ -7,3 +7,12 @@ license = "GPL-3.0-only"
 [lib]
 name = "gsr_capture"
 path = "src/lib.rs"
+
+[dependencies]
+gsr-i18n = { path = "../i18n" }
+gsr-kms-server = { path = "../kms-server" }
+
+# Linux-only: the helper client needs UNIX sockets and process control.
+# (Windows captures via DXGI/WGC with no helper at all.)
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

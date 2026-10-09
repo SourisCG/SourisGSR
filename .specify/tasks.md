@@ -43,8 +43,15 @@ Conventions: each task lists spec ref + test command. DONE = green.
   load/draw/unload, missing-file/symbol errors, init validation, ES).
   Manager in `core/src/plugins.rs`, C ABI in `crates/plugin/src/abi.rs`,
   fixtures in `crates/test-plugin{,-nosymbols}` (approved libloading dep).
-- [ ] T20 `kms-server` (socket + `SCM_RIGHTS`, protocol v5, caps) + security test.
-  Test: `cargo test -p gsr-kms-server`.
+- [x] T20 `kms-server` (socket + `SCM_RIGHTS`, protocol v5, caps) + security test.
+  Done: packed-LE v5 types + roundtrips (14 tests), fd transport with
+  CLOEXEC + fail-closed validation (7), helper binary (CLI/exit codes,
+  reverse-connect, DRM grab via `drm` 0.15), client (spawn modes incl.
+  pkexec, REPLACE dance, timeouts, reaping, fd-count check), fake-helper
+  full-dance test (0.03 s), fd-leak + perms + peercred + clamp tests,
+  no-hardcode allowlist triage. Deviations in spec-02 §5 (WIRE, SEC,
+  SEC-PATH, HELPER-LOGS). HW serve path is manual-QA only (no privileges
+  in CI); new deps `drm`, `drm-fourcc`, `libc` (unix-only).
 - [ ] T21 KMS capturer mock + zero-copy guard (vs `src/capture/kms.c`).
   Test: `cargo test -p gsr-capture kms`.
 - [ ] T22 Portal capturer mock incl. `dbus.c` + `pipewire_video.c` (DMA-BUF, no GPU in CI).

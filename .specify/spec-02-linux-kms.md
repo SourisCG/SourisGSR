@@ -58,3 +58,21 @@ reporting), EGLImage import (`egl.c`) into the encoder without CPU `Map`.
 - Security test: main binary has no ambient caps; helper source stays under
   the minimal-surface budget (single-purpose file, no CLI parsing beyond
   two argv entries).
+
+## 5. Recorded deviations (implemented in T20, all tested)
+
+- `DEVIATION-WIRE`: packed little-endian encoding instead of raw C structs
+  (same field order/limits, concept version 5). Strict fixed-size decoding;
+  over-long counts fail closed instead of C's unchecked loops.
+- `DEVIATION-SEC` (connection dance kept exact for `pkexec` compatibility):
+  socket `0700` under `$XDG_RUNTIME_DIR` (C: `/tmp` + `umask(0000)`);
+  bounded 10 s accept wait (C: infinite); `waitpid` reaping (C: zombie);
+  `MSG_CMSG_CLOEXEC` on received fds; per-request receive timeout;
+  announced-vs-received fd count verification.
+- `DEVIATION-SEC-PATH`: rendezvous dir `$XDG_RUNTIME_DIR` → `$HOME/.cache`
+  → `/tmp` (C: `$HOME/.gsr-kms-socket-*` or `/tmp`).
+- `DEVIATION-HELPER-LOGS`: daemon diagnostics stay English on stderr (like
+  C); every user-facing CLI message is localized through the client.
+- Item cap: at most 8 items per response (C writes past `items[8]`).
+- `pkexec` fallback kept by design decision (flatpak-spawn proxy shape
+  mirrored; host packaging provides `kms-server-proxy` in T51).

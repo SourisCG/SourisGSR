@@ -7,3 +7,17 @@ license = "GPL-3.0-only"
 [[bin]]
 name = "gsr-kms-server"
 path = "src/main.rs"
+
+[lib]
+name = "gsr_kms_server"
+path = "src/lib.rs"
+
+# Linux-only helper: DRM capture plus UNIX-socket fd passing.
+# (The crate still compiles elsewhere: modules are cfg-gated.)
+[target.'cfg(unix)'.dependencies]
+# Safe libdrm bindings for the helper's DRM capture.
+drm = "0.15"
+# FourCC/modifier constants (INVALID fallback mirrors DRM_FORMAT_MOD_INVALID).
+drm-fourcc = "2"
+# Unix sockets, SCM_RIGHTS, peer credentials, capabilities (no pure-std path).
+libc = "0.2"

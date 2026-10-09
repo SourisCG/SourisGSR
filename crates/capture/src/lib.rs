@@ -12,6 +12,8 @@ pub mod damage;
 pub mod dbus;
 pub mod egl;
 pub mod kms;
+/// Privileged-helper client (Linux only; Windows needs no helper).
+#[cfg(unix)]
 pub mod kms_client;
 pub mod portal;
 pub mod protocol;
