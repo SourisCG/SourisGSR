@@ -1,4 +1,4 @@
-# MAPA — GSR C -> gsr-rs (FINAL for frozen reference v5.10.2)
+# MAPA — GSR C -> SourisGSR (FINAL for frozen reference v5.10.2)
 
 > Status: FINAL against `reference/gpu-screen-recorder` (Gnu1 mirror,
 > `meson.build` version `5.10.2`, commit `4363f8b`, verified 2026-10-09).
@@ -49,7 +49,7 @@ Runtime: `libglvnd` (GLES 3.0+), vendor stacks (mesa/vaapi, cuda/nvenc),
 | C (v5.10.2) | Rust | Notes |
 |---|---|---|
 | `src/main.cpp` | `crates/core/src/main.rs` | CLI dispatch, signals, `--info/--list-*`, screenshot path |
-| `src/args_parser.c`, `include/args_parser.h` | `crates/core/src/cli.rs` | 31 flags, enums in §4, yes/no bools, exit-2 errors |
+| `src/args_parser.c`, `include/args_parser.h` | `crates/core/src/cli.rs` | 31 flags + `--lang`, enums in §4, yes/no bools, exit-1 errors |
 | `src/defs.c`, `include/defs.h` | `crates/core/src/config.rs` | Validated `Config`, `-q/-s/-region/-o` rules |
 | `src/replay_buffer/replay_buffer.c` | `crates/core/src/replay.rs` | Facade |
 | `src/replay_buffer/replay_buffer_ram.c` | `crates/core/src/replay_ram.rs` | RAM packet ring |
@@ -61,8 +61,8 @@ Runtime: `libglvnd` (GLES 3.0+), vendor stacks (mesa/vaapi, cuda/nvenc),
 | `src/utils.c` | `crates/core/src/util.rs` | 1:1 mirror, keep small |
 | `src/capture/capture.c`, `include/capture/capture.h` | `crates/capture/src/traits.rs` | Capturer trait + per-source `;k=v` + `\|` |
 | `src/capture/kms.c`, `include/capture/kms.h` | `crates/capture/src/kms.rs` | Monitor/region/cursor/composition |
-| `kms/client/kms_client.c/.h`, `kms/kms_shared.h` | `crates/capture/src/kms_client.rs` + `protocol.rs` | Protocol v5, `items[8]`, `dma_buf[4]`, rotation, HDR |
-| `kms/server/kms_server.c` | `crates/kms-server/src/main.rs` | `gsr-kms-server <socket> <card>`, `SCM_RIGHTS` |
+| `kms/client/kms_client.c/.h`, `kms/kms_shared.h` | `crates/capture/src/kms_client.rs` + `protocol.rs` (re-export) | Spawn modes (direct/flatpak/pkexec), REPLACE dance, timeouts, reaping, fd-count check; protocol v5, `items[8]`, `dma_buf[4]`, rotation, HDR |
+| `kms/server/kms_server.c` | `crates/kms-server/src/main.rs` + `lib.rs` (`protocol.rs` packed-LE v5, `transport.rs` `SCM_RIGHTS`, `grab.rs` DRM grab) | `gsr-kms-server <socket> <card>`, exits 1/2/3 like C; see §6 |
 | `src/capture/portal.c`, `include/capture/portal.h`, `src/dbus.c`, `src/pipewire_video.c` | `crates/capture/src/portal.rs`, `dbus.rs` | ScreenCast + DMA-BUF + crop/damage |
 | `src/pipewire_audio.c`, `include/pipewire_audio.h` | `crates/audio/src/pipewire_app.rs` | `-a app:` / `app-inverse:` |
 | `src/sound.cpp`, `include/sound.hpp` | `crates/audio/src/pulse.rs` | Pulse devices, `default_output/input`, `\|` |
@@ -110,7 +110,8 @@ Flags: `-w -c -f -s -region -a -q -o -ro -r -restart-replay-on-save -k -ac
 -restore-portal-session -portal-session-token-filepath -encoder
 -fallback-cpu-encoding -replay-storage -p` +
 `--info --list-capture-options [--list-capture-options card]
---list-audio-devices --list-application-audio --version -h/--help`.
+--list-audio-devices --list-application-audio --version -h/--help`
+plus SourisGSR-only `--lang en|es|auto` (`DEVIATION-ADD`).
 
 `-k`: `auto h264 h265 hevc hevc_hdr hevc_10bit av1 av1_hdr av1_10bit vp8 vp9`.
 `-ac`: `opus aac flac` (flac warns + falls back to opus).
@@ -125,3 +126,9 @@ requests `REPLACE_CONNECTION`/`GET_KMS`, results incl.
 `FAILED_TO_GET_PLANE(S)`/`FAILED_TO_SEND`, per-item `fd/pitch/offset`,
 `width/height/format/modifier/connector_id/is_cursor/rotation/x/y/src_w/src_h`
 + `hdr_output_metadata`. Helper CLI: `gsr-kms-server <socket> <card>`.
+
+Rust wire (`DEVIATION-WIRE`, ADR-0003): packed little-endian, same field
+order (DMA entries before count, like the C struct), fixed 8-byte
+requests / 1036-byte responses, strict fail-closed decoding. Hardening
+(`DEVIATION-SEC`, ADR-0004): `0700` socket under `$XDG_RUNTIME_DIR`,
+bounded waits, reaping, CLOEXEC fds, fd-count verification.
