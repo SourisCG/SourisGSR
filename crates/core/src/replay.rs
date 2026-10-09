@@ -139,11 +139,20 @@ pub fn recording_filepath(
 /// `kind` is `regular`, `replay` or `screenshot`. Uses
 /// `flatpak-spawn --host` under Flatpak. Returns `false` when the script
 /// path cannot be resolved (mirrors the C early return).
-pub fn run_saved_script(script: &str, video_file: &str, kind: &str) -> bool {
+pub fn run_saved_script(
+    catalog: &gsr_i18n::Catalog,
+    script: &str,
+    video_file: &str,
+    kind: &str,
+) -> bool {
     let resolved = match std::fs::canonicalize(script) {
         Ok(p) => p,
         Err(_) => {
-            eprintln!("gsr error: script file not found: {script}");
+            eprintln!(
+                "{}: {}",
+                catalog.get("prefix_error"),
+                gsr_i18n::fill(&catalog.get("err_script_not_found"), &[("path", script)])
+            );
             return false;
         }
     };
@@ -159,7 +168,14 @@ pub fn run_saved_script(script: &str, video_file: &str, kind: &str) -> bool {
     match cmd.spawn() {
         Ok(_) => true,
         Err(e) => {
-            eprintln!("gsr error: failed to run script {script}: {e}");
+            eprintln!(
+                "{}: {}",
+                catalog.get("prefix_error"),
+                gsr_i18n::fill(
+                    &catalog.get("err_script_run_failed"),
+                    &[("script", script), ("reason", &e.to_string())]
+                )
+            );
             false
         }
     }

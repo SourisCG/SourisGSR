@@ -35,6 +35,8 @@ pub fn clamp_quality(quality: u8) -> u8 {
 
 /// Write RGBA8 pixels (`width * height * 4` bytes) to `path`.
 /// Format comes from the extension; unknown extensions fail.
+/// Errors are technical diagnostics; callers display the localized
+/// `err_screenshot_write` message (T20 wiring).
 pub fn write_rgba(
     path: &Path,
     width: u32,
@@ -83,10 +85,5 @@ pub fn write_rgba(
                 .map_err(io::Error::other)
         }
     };
-    result.map_err(|e| {
-        io::Error::other(format!(
-            "failed to write image data to output file {}: {e}",
-            path.display()
-        ))
-    })
+    result
 }

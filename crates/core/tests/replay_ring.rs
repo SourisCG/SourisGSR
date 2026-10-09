@@ -321,7 +321,9 @@ fn timestamps_and_filepaths_match_c_formats() {
 
 #[test]
 fn missing_script_returns_false() {
+    let catalog = gsr_i18n::Catalog::new(gsr_i18n::Lang::En);
     assert!(!run_saved_script(
+        &catalog,
         "/no/such/script.sh",
         "/tmp/x.mp4",
         "replay"
@@ -345,6 +347,7 @@ fn script_runs_detached_with_file_and_kind_args() {
     fs::set_permissions(&script, perms).unwrap();
 
     assert!(run_saved_script(
+        &gsr_i18n::Catalog::new(gsr_i18n::Lang::En),
         script.to_str().unwrap(),
         "/tmp/v.mp4",
         "replay"

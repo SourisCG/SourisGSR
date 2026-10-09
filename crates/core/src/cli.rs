@@ -290,7 +290,11 @@ fn is_future_flag(flag: &str) -> bool {
 
 fn usage_err(catalog: &Catalog, key: &str, pairs: &[(&str, &str)]) -> ParseErr {
     ParseErr {
-        message: format!("gsr error: {}", fill(&catalog.get(key), pairs)),
+        message: format!(
+            "{}: {}",
+            catalog.get("prefix_error"),
+            fill(&catalog.get(key), pairs)
+        ),
         full_help: false,
     }
 }
@@ -551,7 +555,8 @@ fn build_config(
 
     if audio_codec == AudioCodec::Flac {
         warnings.push(format!(
-            "gsr warning: {}",
+            "{}: {}",
+            catalog.get("prefix_warning"),
             catalog.get("warn_flac_disabled_fallback_opus")
         ));
         audio_codec = AudioCodec::Opus;
@@ -706,20 +711,23 @@ fn build_config(
 
     if !restore_portal_session && window == "portal" {
         warnings.push(format!(
-            "gsr info: {}",
+            "{}: {}",
+            catalog.get("prefix_info"),
             catalog.get("info_portal_no_restore")
         ));
     }
     if is_livestream && saved_script.is_some() {
         warnings.push(format!(
-            "gsr warning: {}",
+            "{}: {}",
+            catalog.get("prefix_warning"),
             catalog.get("warn_sc_ignored_livestream")
         ));
         saved_script = None;
     }
     if overclock {
         warnings.push(format!(
-            "gsr warning: {}",
+            "{}: {}",
+            catalog.get("prefix_warning"),
             catalog.get("warn_oc_requires_x11")
         ));
         overclock = false;

@@ -1,0 +1,22 @@
+# Technical strings allowed outside crates/i18n (one substring per line).
+# Rule (see crates/i18n/tests/no_hardcode.rs): string literals containing
+# whitespace with length >= 12 found in crates/*/src (excluding the i18n
+# crate itself, tests/ and examples/ dirs, and assert/expect/panic lines)
+# must either live in the locales or be listed here with a reason.
+#
+# Each entry below names developer-facing diagnostics (never shown as primary
+# UX, or pending catalog plumbing in a later phase).
+
+# DiskRing append failure: no Catalog is threaded through the ring yet;
+# T20 wires the localized display (err_replay_* family).
+too many replay buffer files created
+# DiskRing read_packet invariant diagnostics; T20 maps save-path failures to
+# localized messages (err_replay_* family).
+file index out of range
+packet index out of range
+# screenshot.rs technical io::Error details; callers display the localized
+# err_screenshot_write message (T20 wiring), details stay diagnostic.
+unsupported screenshot extension
+screenshot dimensions must be non-zero
+# kms-server skeleton notice; replaced by the real helper in T20.
+skeleton helper, see

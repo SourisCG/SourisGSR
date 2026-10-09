@@ -29,7 +29,8 @@ fn main() {
                 _ => {
                     let catalog = catalog_for(&argv);
                     eprintln!(
-                        "gsr error: {}",
+                        "{}: {}",
+                        catalog.get("prefix_error"),
                         gsr_i18n::fill(
                             &catalog.get("err_not_implemented"),
                             &[("what", "recording")]
