@@ -1,0 +1,9 @@
+[package]
+name = "gsr-i18n"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[lib]
+name = "gsr_i18n"
+path = "src/lib.rs"

@@ -1,0 +1,12 @@
+# Spanish locale. Keys must stay identical to en.toml (i18n test enforces it).
+app_name = "gsr-rs"
+err_invalid_arg = "argumento inválido"
+err_missing_value = "falta el valor del argumento"
+err_unsupported_x11 = "esta fuente requiere X11, que no es compatible con gsr-rs"
+err_unsupported_future = "no compatible en esta versión (previsto para v2)"
+err_region_requires_window = "la opción -region solo puede usarse con -w region"
+err_region_required = "la opción -region es obligatoria con -w region"
+err_quality_cbr_integer = "-q debe ser un bitrate entero en kbps con -bm cbr"
+warn_oc_requires_x11 = "-oc requiere X11 y se ignora en este sistema"
+warn_flac_disabled_fallback_opus = "el códec de audio flac está desactivado temporalmente, usando opus"
+info_saved_to = "guardado en"

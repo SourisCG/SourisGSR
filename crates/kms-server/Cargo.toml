@@ -1,0 +1,9 @@
+[package]
+name = "gsr-kms-server"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "gsr-kms-server"
+path = "src/main.rs"

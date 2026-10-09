@@ -1,0 +1,9 @@
+# Build outputs, local captures, vendored C reference (MAPA.md stays tracked).
+/target/
+reference/gpu-screen-recorder/
+Videos/
+*.mp4
+*.mkv
+*.png
+*.jpg
+Replay_*/

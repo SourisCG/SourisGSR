@@ -1,0 +1,13 @@
+[package]
+name = "gsr-core"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "gpu-screen-recorder"
+path = "src/main.rs"
+
+[lib]
+name = "gsr_core"
+path = "src/lib.rs"

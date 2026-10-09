@@ -1,0 +1,12 @@
+# English locale. Keys must stay identical to es.toml (i18n test enforces it).
+app_name = "gsr-rs"
+err_invalid_arg = "invalid argument"
+err_missing_value = "missing value for argument"
+err_unsupported_x11 = "this source requires X11, which is not supported by gsr-rs"
+err_unsupported_future = "not supported in this version (planned for v2)"
+err_region_requires_window = "option -region can only be used with -w region"
+err_region_required = "option -region is required with -w region"
+err_quality_cbr_integer = "-q must be an integer bitrate in kbps with -bm cbr"
+warn_oc_requires_x11 = "-oc requires X11 and is ignored on this system"
+warn_flac_disabled_fallback_opus = "flac audio codec is temporarily disabled, using opus instead"
+info_saved_to = "saved to"

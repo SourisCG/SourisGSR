@@ -1,0 +1,9 @@
+[package]
+name = "gsr-capture"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+
+[lib]
+name = "gsr_capture"
+path = "src/lib.rs"
