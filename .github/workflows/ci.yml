@@ -12,9 +12,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        # Extend this list with each phase (see docs/build.md).
+        # libdrm: link dependency of the drm crate (kms-server).
+        run: sudo apt-get update && sudo apt-get install -y libdrm-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - run: cargo test --workspace --all-features
-      - run: cargo clippy --workspace --all-targets -D warnings
+      - run: cargo test --workspace --no-fail-fast
+      - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo fmt --all -- --check
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Coverage gate (core + i18n >= 80%)
+        run: cargo tarpaulin -p gsr-core -p gsr-i18n --fail-under 80
