@@ -27,8 +27,9 @@ Conventions: each task lists spec ref + test command. DONE = green.
   Test: `cargo test -p gsr-core cli` (21 passed). Exit 1 on parse errors
   (spec-01 corrected: C `_exit(1)`). Deviations: HELP-EXIT, STRICT-INT,
   TYPO, WINDOW-LEN, ADD(--lang), X11-NEVER, FUTURE.
-- [ ] T11 `core/replay` ring tests (`replay*.rs` vs `replay_buffer/*.c`).
-  Test: `cargo test -p gsr-core replay`.
+- [x] T11 `core/replay` ring tests (`replay*.rs` vs `replay_buffer/*.c`).
+  Test: `cargo test -p gsr-core replay` (18 passed). Deviations: NOW-PARAM,
+  NO-KEYFRAME, SNAPSHOT, UTC-TIME, SPAWN.
 - [ ] T12 `core/muxer+screenshot` timestamp tests + 10s mock integration + `ffprobe` parity.
   Test: `cargo test -p gsr-core mux`.
 - [ ] T13 i18n keys + fallback + no-hardcode test.

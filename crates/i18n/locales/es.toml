@@ -40,6 +40,7 @@ info_portal_no_restore = "se usó la opción '-w portal' sin '-restore-portal-se
 warn_sc_ignored_livestream = "streaming en directo detectado, el script -sc se ignorará"
 err_plugin_load = "no se pudo cargar el plugin '{path}': {reason}"
 err_not_implemented = "aún no implementado: {what}"
+err_replay_no_keyframe = "no se pudo guardar el replay: no se encontró un keyframe de vídeo. quizás el replay se guardó demasiado rápido, antes de grabar nada"
 err_list_capture_args = "se esperaba que --list-capture-options se llamara sin argumentos extra o con 1 argumento extra (ruta de la tarjeta)"
 err_window_too_long = "el nombre de ventana es demasiado largo (máximo 63 caracteres)"
 help_usage = "Uso: gpu-screen-recorder -w <fuente> [opciones] -o <salida>"
