@@ -1,6 +1,6 @@
 # Contributing to SourisGSR
 
-Talk to the maintainer in Spanish. Everything else (specs, docs, code,
+Talk to the maintainer in Spanish or English. Everything else (specs, docs, code,
 comments, commits) is in English. The app itself is English + Spanish.
 
 ## Spec-Driven Development
