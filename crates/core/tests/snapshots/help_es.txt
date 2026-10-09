@@ -1,0 +1,34 @@
+Uso: gpu-screen-recorder -w <fuente> [opciones] -o <salida>
+  -w: qué grabar: screen, portal, region o un nombre de monitor (los valores solo-X11 se rechazan)
+  -c: formato contenedor (mp4, mkv); por defecto usa la extensión del nombre de -o
+  -f: fotogramas por segundo, 1-1000 (por defecto: 60)
+  -s: límite de resolución de salida como WxH, 0x0 conserva la resolución original
+  -region: región a capturar como WxH+X+Y, solo con -w region
+  -a: fuente de audio a grabar, repetible (default_output, default_input, device:nombre, app:nombre)
+  -q: preset de calidad (medium, high, very_high, ultra) o bitrate en kbps con -bm cbr
+  -o: fichero de salida, o directorio de salida en modo replay
+  -ro: directorio para grabaciones normales durante replay o streaming
+  -r: duración del buffer de replay en segundos, 2-86400
+  -restart-replay-on-save: limpiar el buffer de replay tras guardar (yes o no)
+  -k: códec de vídeo (auto, h264, h265, hevc, hevc_hdr, hevc_10bit, av1, av1_hdr, av1_10bit, vp8, vp9)
+  -ac: códec de audio (opus, aac, flac)
+  -ab: bitrate de audio en kbps, 0 significa automático
+  -oc: overclock para rendimiento NVIDIA óptimo en X11 (se ignora en otros sistemas)
+  -fm: modo de fotogramas (vfr, cfr, content)
+  -bm: modo de bitrate (auto, qp, cbr, vbr)
+  -pixfmt: formato de píxel (yuv420, yuv444)
+  -v: mostrar FPS e información de estado (yes o no)
+  -gl-debug: activar la depuración de OpenGL (yes o no)
+  -df: organizar replays en carpetas por fecha (yes o no)
+  -sc: ejecutar un script al guardar una grabación o replay
+  -cr: rango de color (limited, full)
+  -tune: ajuste de codificación (performance, quality)
+  -cursor: grabar el cursor (yes o no)
+  -keyint: intervalo de keyframes en segundos
+  -restore-portal-session: restaurar la sesión anterior del portal (yes o no)
+  -portal-session-token-filepath: fichero que guarda el token de sesión del portal
+  -encoder: dispositivo de codificación (gpu, cpu)
+  -fallback-cpu-encoding: usar CPU si la codificación GPU no está disponible (yes o no)
+  -replay-storage: almacenamiento del buffer de replay (ram, disk)
+  -p: cargar un plugin de overlay (fichero .so), repetible
+  --lang: idioma de la interfaz (en, es, auto)

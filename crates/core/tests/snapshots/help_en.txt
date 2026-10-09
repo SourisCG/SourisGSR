@@ -1,0 +1,34 @@
+Usage: gpu-screen-recorder -w <source> [options] -o <output>
+  -w: what to record: screen, portal, region or a monitor name (X11-only values are rejected)
+  -c: container format (mp4, mkv); defaults to the -o filename extension
+  -f: frame rate, 1-1000 (default: 60)
+  -s: output resolution limit as WxH, 0x0 keeps the original resolution
+  -region: region to capture as WxH+X+Y, only with -w region
+  -a: audio source to record, repeatable (default_output, default_input, device:name, app:name)
+  -q: quality preset (medium, high, very_high, ultra) or bitrate in kbps with -bm cbr
+  -o: output file, or output directory in replay mode
+  -ro: output directory for regular recordings during replay or streaming
+  -r: replay buffer duration in seconds, 2-86400
+  -restart-replay-on-save: clear the replay buffer after saving (yes or no)
+  -k: video codec (auto, h264, h265, hevc, hevc_hdr, hevc_10bit, av1, av1_hdr, av1_10bit, vp8, vp9)
+  -ac: audio codec (opus, aac, flac)
+  -ab: audio bitrate in kbps, 0 means automatic
+  -oc: overclock for optimal NVIDIA performance on X11 (ignored elsewhere)
+  -fm: frame rate mode (vfr, cfr, content)
+  -bm: bitrate mode (auto, qp, cbr, vbr)
+  -pixfmt: pixel format (yuv420, yuv444)
+  -v: print FPS and status info (yes or no)
+  -gl-debug: enable OpenGL debug output (yes or no)
+  -df: organize replays in date-based folders (yes or no)
+  -sc: run a script when a recording or replay is saved
+  -cr: color range (limited, full)
+  -tune: encoding tune (performance, quality)
+  -cursor: record the cursor (yes or no)
+  -keyint: keyframe interval in seconds
+  -restore-portal-session: restore the previous portal session (yes or no)
+  -portal-session-token-filepath: file storing the portal session token
+  -encoder: encoding device (gpu, cpu)
+  -fallback-cpu-encoding: fall back to CPU encoding if GPU encoding is unavailable (yes or no)
+  -replay-storage: replay buffer storage (ram, disk)
+  -p: load an overlay plugin (.so file), repeatable
+  --lang: interface language (en, es, auto)

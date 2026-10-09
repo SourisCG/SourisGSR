@@ -45,7 +45,8 @@ Enums (exact names from C):
 - Booleans are strictly `yes|no` (anything else is an error, as in C).
 - `-a` and `-p` are repeatable (list). Any other flag repeated is an error.
 - Unknown flag, missing value, or out-of-range integer/double is a localized
-  error on stderr + usage on stdout + exit code 2 (mirrors C `usage()`).
+  error on stderr + usage on stdout + exit 1 (mirrors `main.cpp` `_exit(1)` on
+  parse failure; `_exit(2)` is reserved for runtime environment errors).
 
 `-w` values (from `main.cpp` + `args_parser.c` usage text):
 
@@ -135,5 +136,5 @@ as C: `puts("focused")`, `puts("region")`, `puts("portal")`, monitor lines).
 
 - `cargo test -p gsr-core` green with mocks (no GPU).
 - `--help` EN/ES snapshot tests.
-- Invalid-args tests exit 2 with localized message.
+- Invalid-args tests exit 1 with localized message on stderr.
 - Parity vs C: normalized `diff <(C --help) <(rs --help)` + `ffprobe` compare.

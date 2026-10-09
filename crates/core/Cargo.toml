@@ -11,3 +11,6 @@ path = "src/main.rs"
 [lib]
 name = "gsr_core"
 path = "src/lib.rs"
+
+[dependencies]
+gsr-i18n = { path = "../i18n" }

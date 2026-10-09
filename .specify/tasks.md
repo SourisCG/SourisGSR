@@ -23,8 +23,10 @@ Conventions: each task lists spec ref + test command. DONE = green.
 - [x] T13a i18n Catalog API (`Lang`, `resolve_lang`, `Catalog`, `fill`) + 48 help/error
   keys EN/ES + `catalog.rs` tests (enables T10 localized errors).
   Test: `cargo test -p gsr-i18n` (8 passed).
-- [ ] T10 `core/cli+config` unit tests (valid/invalid, en/es `--help`).
-  Test: `cargo test -p gsr-core cli`.
+- [x] T10 `core/cli+config` unit tests (valid/invalid, en/es `--help`).
+  Test: `cargo test -p gsr-core cli` (21 passed). Exit 1 on parse errors
+  (spec-01 corrected: C `_exit(1)`). Deviations: HELP-EXIT, STRICT-INT,
+  TYPO, WINDOW-LEN, ADD(--lang), X11-NEVER, FUTURE.
 - [ ] T11 `core/replay` ring tests (`replay*.rs` vs `replay_buffer/*.c`).
   Test: `cargo test -p gsr-core replay`.
 - [ ] T12 `core/muxer+screenshot` timestamp tests + 10s mock integration + `ffprobe` parity.
