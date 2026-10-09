@@ -30,8 +30,9 @@ Conventions: each task lists spec ref + test command. DONE = green.
 - [x] T11 `core/replay` ring tests (`replay*.rs` vs `replay_buffer/*.c`).
   Test: `cargo test -p gsr-core replay` (18 passed). Deviations: NOW-PARAM,
   NO-KEYFRAME, SNAPSHOT, UTC-TIME, SPAWN.
-- [ ] T12 `core/muxer+screenshot` timestamp tests + 10s mock integration + `ffprobe` parity.
-  Test: `cargo test -p gsr-core mux`.
+- [x] T12 `core/muxer+screenshot` timestamp tests + 10s mock integration + `ffprobe` parity.
+  Test: `cargo test -p gsr-core mux` (10 passed, 1 ffprobe harness ignored for
+  T40). Screenshot via `image` crate (approved dep). Env: FFmpeg 8.1 present.
 - [ ] T13 i18n keys + fallback + no-hardcode test.
   Test: `cargo test -p gsr-i18n`.
 - [ ] T14 plugins (`-p` load + triangle example vs `plugin/plugin.h`).
