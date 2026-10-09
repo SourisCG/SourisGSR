@@ -9,14 +9,11 @@ Conventions: each task lists spec ref + test command. DONE = green.
 - [x] T01 Clone reference + verify MAPA vs real `src/|kms/|include/|extra/|meson.build`.
   Verified: v5.10.2, commit `4363f8b`, 38-entry `meson.build` src list, no `v4l2.c`.
 
-## NOW (skeleton + specs, no encoder logic)
+## DONE (skeleton + specs materialized, gates green at the time)
 
-- [ ] T02 Materialize `.specify/` + `docs/` index + `reference/MAPA.md`.
-  Test: `ls .specify/{constitution,spec-01-core,plan,tasks}.md reference/MAPA.md`.
-- [ ] T03 Workspace skeleton + structure-mapping test + locales/extra/CI.
-  Test: `cargo test --workspace && cargo clippy --workspace -D warnings && cargo fmt --check`.
-- [ ] T04 Specs 02..06 with exact C-file citations + DEVIATIONs.
-  Test: `grep -c "reference/gpu-screen-recorder" .specify/spec-*.md`.
+- [x] T02 Materialize `.specify/` + `docs/` index + `reference/MAPA.md`.
+- [x] T03 Workspace skeleton + structure-mapping test + locales/extra/CI.
+- [x] T04 Specs 02..06 with exact C-file citations + DEVIATIONs.
 
 ## NEXT (strict order after skeleton is green)
 
