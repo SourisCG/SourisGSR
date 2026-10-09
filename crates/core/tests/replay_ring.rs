@@ -10,6 +10,7 @@ use gsr_core::replay_disk::DiskRing;
 use gsr_core::replay_ram::RamRing;
 use std::fs;
 use std::path::PathBuf;
+#[cfg(unix)]
 use std::time::{Duration, Instant};
 
 fn pkt(i: i64, stream: i32, key: bool, ts: f64) -> Packet {
