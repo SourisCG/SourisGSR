@@ -68,6 +68,8 @@ typedef struct {
 } sgsr_event;
 
 typedef void (*sgsr_event_cb)(const sgsr_event *ev, void *userdata);
+/* NOTE: the event callback fires on the internal worker thread; it must be
+   thread-safe. Message carries file paths for replay/screenshot events. */
 
 typedef struct {
     sgsr_source video_source;
@@ -100,12 +102,20 @@ sgsr_error sgsr_enumerate_audio_devices(sgsr_audio_device **out, size_t *out_n);
 void sgsr_free_video_sources(sgsr_source *p);
 void sgsr_free_audio_devices(sgsr_audio_device *p);
 
-/* Full control. config must stay alive during start (it is copied). */
+/* Full control. config must stay alive during start (it is copied).
+   start() brings up windowing+EGL and runs the real engine on a worker
+   thread; stop() joins it. All control calls are thread-safe. */
 sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out);
 sgsr_error sgsr_stop(sgsr_recorder *r);
 sgsr_error sgsr_pause(sgsr_recorder *r);
 sgsr_error sgsr_resume(sgsr_recorder *r);
+/* Save the replay buffer. The engine writes a timestamped file into the
+   replay directory; when path differs it is renamed into place and the
+   final path is reported via SGSR_EVENT_REPLAY_SAVED. Requires replay mode,
+   else SGSR_ERR_UNSUPPORTED. */
 sgsr_error sgsr_save_replay(sgsr_recorder *r, const char *path);
+/* Single screenshot into path (format from extension, JPEG fallback).
+   Requires a running recorder, else SGSR_ERR_NOT_RUNNING. */
 sgsr_error sgsr_screenshot(sgsr_recorder *r, const char *path);
 
 /* Hot 0-100 volumes (recording only). */

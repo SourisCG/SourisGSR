@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  linux-core:
+    name: Linux core CLI (Wayland priority)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install meson
+        run: pip install meson
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build pkg-config gcc \
+            libx11-dev libxcomposite-dev libxrandr-dev libxfixes-dev \
+            libxdamage-dev libpulse-dev libva-dev libdrm-dev \
+            libcap-dev libwayland-dev wayland-protocols \
+            libdbus-1-dev libpipewire-0.3-dev libspa-0.2-dev \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswresample-dev libavfilter-dev \
+            libglvnd-dev linux-libc-dev
+      - name: Configure
+        working-directory: core
+        run: meson setup /tmp/build-core -Dcapabilities=false -Dsystemd=false
+      - name: Build
+        run: meson compile -C /tmp/build-core
+      - name: Smoke test CLI flags
+        run: |
+          /tmp/build-core/gpu-screen-recorder --help | grep -q "mic-volume"
+          /tmp/build-core/gpu-screen-recorder --list-audio-devices | grep -q "default_output"
+
+  linux-overlay:
+    name: Linux overlay UI
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install meson
+        run: pip install meson
+      - name: Fetch mglpp submodule
+        run: git clone --depth 1 https://repo.dec05eba.com/mglpp overlay/depends/mglpp
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build pkg-config g++ wayland-protocols \
+            libx11-dev libxrandr-dev libxrender-dev libxcomposite-dev \
+            libxfixes-dev libxext-dev libxi-dev libxcursor-dev \
+            libglvnd-dev libpulse-dev libdrm-dev libdbus-1-dev \
+            libcap-dev libpango1.0-dev
+      - name: Configure and build
+        run: |
+          meson setup /tmp/build-overlay overlay
+          meson compile -C /tmp/build-overlay
+
+  rust-sdk:
+    name: Rust SDK
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Unit tests (no engine link)
+        working-directory: sdk/rust
+        run: cargo test -p souris-gsr-sdk
+      - name: FFI typecheck (no linking)
+        working-directory: sdk/rust
+        run: cargo check --features ffi -p souris-gsr-sdk
+
+  windows-core:
+    name: Windows core (WGC/WASAPI base)
+    runs-on: windows-11
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install meson
+        run: pip install meson
+      - name: Configure (vcpkg toolchain provides FFmpeg + C++/WinRT)
+        working-directory: core
+        run: meson setup C:/sgsr-build --vsenv -Dportal=false -Dapp_audio=false -Dcapabilities=false -Dsystemd=false -Dnvidia_suspend_fix=false
+        env:
+          CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}/../vcpkg/scripts/buildsystems/vcpkg.cmake
+      - name: Build
+        run: meson compile -C C:/sgsr-build

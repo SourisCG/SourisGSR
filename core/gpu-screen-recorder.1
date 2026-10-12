@@ -258,6 +258,10 @@ Formats:
 .IP \(bu 3
 Combine sources with | (e.g.,
 .BR "default_output|app:firefox" )
+.IP \(bu 3
+.B vol=NN
+- Per-input recording-only gain 0-100, applies to the previous input (e.g.,
+.BR "default_output|vol=80|default_input|vol=90" )
 .RE
 .PP
 Run
@@ -267,6 +271,16 @@ to list available audio devices.
 Run
 .B \-\-list\-application\-audio
 to list available applications for audio capture.
+.TP
+.BI \-mic\-volume " 0-100"
+Microphone/input gain in percent, recording only (default: 100). OBS style.
+Never changes the system mixer volume.
+.TP
+.BI \-system\-volume " 0-100"
+System/output gain in percent, recording only (default: 100).
+.TP
+.BI \-app\-volume " 0-100"
+Application audio gain in percent, recording only (default: 100).
 .TP
 .BI \-ac " aac|opus|flac"
 Audio codec (default: opus for mp4/mkv, aac otherwise). FLAC temporarily disabled.
