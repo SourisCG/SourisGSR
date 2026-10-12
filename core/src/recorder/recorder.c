@@ -18,6 +18,7 @@
 #include "../../include/utils.h"
 #include "../../include/ffmpeg_utils.h"
 #include "../../include/log.h"
+#include "../../include/souris_gain.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -967,6 +968,41 @@ void gsr_recorder_toggle_pause(gsr_recorder *self) {
 
 void gsr_recorder_set_paused(gsr_recorder *self, bool paused) {
     atomic_store(&self->set_paused_request, paused ? GSR_SET_PAUSED_REQUEST_PAUSE : GSR_SET_PAUSED_REQUEST_UNPAUSE);
+}
+
+/* SourisGSR: live update of recording-only volumes (0-100, OBS style).
+   Safe to call from another thread: device threads read volume_gain
+   atomically. Per-input vol= keeps overriding the globals. */
+void gsr_recorder_set_volumes(gsr_recorder *self, int mic_volume_percent, int system_volume_percent, int app_volume_percent) {
+    if(!self)
+        return;
+    if(mic_volume_percent < 0)
+        mic_volume_percent = 0;
+    if(mic_volume_percent > 100)
+        mic_volume_percent = 100;
+    if(system_volume_percent < 0)
+        system_volume_percent = 0;
+    if(system_volume_percent > 100)
+        system_volume_percent = 100;
+    if(app_volume_percent < 0)
+        app_volume_percent = 0;
+    if(app_volume_percent > 100)
+        app_volume_percent = 100;
+    self->settings.mic_volume_percent = mic_volume_percent;
+    self->settings.system_volume_percent = system_volume_percent;
+    self->settings.app_volume_percent = app_volume_percent;
+    for(size_t i = 0; i < self->audio_capture.num_tracks; ++i) {
+        gsr_audio_track *track = &self->audio_capture.tracks[i];
+        for(size_t j = 0; j < track->num_audio_devices; ++j) {
+            gsr_audio_device_capture *device = &track->audio_devices[j];
+            const gsr_audio_input *audio_input = &device->audio_input;
+            const bool is_app = audio_input->type == GSR_AUDIO_INPUT_TYPE_APPLICATION;
+            const bool is_mic = souris_device_name_is_mic(audio_input->name);
+            atomic_store(&device->volume_gain, souris_resolve_gain(audio_input->has_custom_volume, audio_input->volume,
+                                                                   is_app, is_mic,
+                                                                   mic_volume_percent, system_volume_percent, app_volume_percent));
+        }
+    }
 }
 
 void gsr_recorder_toggle_replay_recording(gsr_recorder *self) {

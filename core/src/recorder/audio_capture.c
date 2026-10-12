@@ -328,8 +328,8 @@ static void* audio_device_thread(void *userdata) {
                in place for every backend, so it only applies when the frame
                is ours (needs_audio_conversion). In practice
                needs_audio_conversion is always true. */
-            if(needs_audio_conversion && device->volume_gain != 1.0f)
-                souris_apply_gain_to_frame(device->frame, track->codec_context, device->volume_gain);
+            if(needs_audio_conversion && atomic_load(&device->volume_gain) != 1.0f)
+                souris_apply_gain_to_frame(device->frame, track->codec_context, atomic_load(&device->volume_gain));
 
             pthread_mutex_lock(&self->filter_mutex);
 
@@ -558,9 +558,9 @@ int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_a
         /* SourisGSR: effective gain resolved here (per-input vol= or global). */
         const bool is_app = audio_input->type == GSR_AUDIO_INPUT_TYPE_APPLICATION;
         const bool is_mic = souris_device_name_is_mic(audio_input->name);
-        device->volume_gain = souris_resolve_gain(audio_input->has_custom_volume, audio_input->volume,
+        atomic_store(&device->volume_gain, souris_resolve_gain(audio_input->has_custom_volume, audio_input->volume,
                                                   is_app, is_mic,
-                                                  mic_volume_percent, system_volume_percent, app_volume_percent);
+                                                  mic_volume_percent, system_volume_percent, app_volume_percent));
 
         if(audio_input->name[0] == '\0') {
             device->sound_device.handle = NULL;
@@ -592,7 +592,10 @@ int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merg
         return alloc_result;
 
     gsr_audio_device_capture *device = &self->audio_devices[0];
-    device->volume_gain = souris_volume_percent_to_gain(app_volume_percent);
+    /* Combined app-audio sink: recording-only gain from the app volume.
+       Mark the type so live set_volumes recomputes it as app audio. */
+    device->audio_input.type = GSR_AUDIO_INPUT_TYPE_APPLICATION;
+    atomic_store(&device->volume_gain, souris_volume_percent_to_gain(app_volume_percent));
     device->frame = create_audio_frame(audio_codec_context);
     if(!device->frame)
         return GSR_ERROR_GENERIC;

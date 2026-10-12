@@ -24,6 +24,10 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+/// Raw + safe C ABI bindings (`ffi` feature, needs `libsouris_gsr` linked).
+#[cfg(feature = "ffi")]
+pub mod ffi;
+
 /// OBS-style 0-100%. `Volume::percent` clamps.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Volume(u8);
@@ -255,8 +259,8 @@ impl Recorder {
         // Volumes already come clamped via Volume::percent.
         let r = Self { cfg, on_event, state: Mutex::new(State::Recording) };
         r.emit(Event::Started);
-        // TODO(ffi): with the `ffi` feature, call sgsr_start() from the C ABI
-        // (include/souris_gsr.h) instead of this state stub.
+        // Note: with the `ffi` feature, `ffi::` exposes the same surface
+        // against the real engine (see ffi module docs to link libsouris_gsr).
         Ok(r)
     }
 

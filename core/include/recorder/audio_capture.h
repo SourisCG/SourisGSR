@@ -37,9 +37,10 @@ struct gsr_audio_device_capture {
     pthread_t thread;
     bool thread_created;
     gsr_audio_device_thread_userdata thread_userdata;
-    /* SourisGSR: recording-only gain 0.0-1.0, already resolved (per-input vol=
-       times global mic/system/app). Default 1.0. */
-    float volume_gain;
+    /* SourisGSR: recording-only gain 0.0-1.0, already resolved (per-input
+       vol= times global mic/system/app). Default 1.0. Atomic because the
+       device thread reads it while set_volumes may rewrite it. */
+    _Atomic float volume_gain;
 };
 
 /* TODO: Instead of having a thread for each audio device, have one thread for all of them and read the data with non-blocking read */
