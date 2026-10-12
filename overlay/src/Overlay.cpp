@@ -3061,6 +3061,29 @@ namespace gsr {
             args.push_back(audio_track.c_str());
         }
 
+        // SourisGSR: recording-only volumes (OBS style). Only passed when
+        // changed so the overlay stays compatible with older CLI builds.
+        // Note: thread_local storage keeps the c_str() pointers valid until
+        // the next call on this (UI) thread; args are consumed synchronously.
+        static thread_local std::string souris_mic_volume_str;
+        static thread_local std::string souris_system_volume_str;
+        static thread_local std::string souris_app_volume_str;
+        if(record_options.mic_volume != 100) {
+            souris_mic_volume_str = std::to_string(record_options.mic_volume);
+            args.push_back("-mic-volume");
+            args.push_back(souris_mic_volume_str.c_str());
+        }
+        if(record_options.system_volume != 100) {
+            souris_system_volume_str = std::to_string(record_options.system_volume);
+            args.push_back("-system-volume");
+            args.push_back(souris_system_volume_str.c_str());
+        }
+        if(record_options.app_volume != 100) {
+            souris_app_volume_str = std::to_string(record_options.app_volume);
+            args.push_back("-app-volume");
+            args.push_back(souris_app_volume_str.c_str());
+        }
+
         if(record_options.restore_portal_session && force_type != RecordForceType::WINDOW) {
             args.push_back("-restore-portal-session");
             args.push_back("yes");

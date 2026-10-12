@@ -68,6 +68,13 @@ Linux (core CLI):
 meson setup build && ninja -C build
 ```
 
+Overlay UI (Linux):
+```sh
+# upstream submodule (same as upstream, not vendored here):
+git clone https://repo.dec05eba.com/mglpp overlay/depends/mglpp
+meson setup overlay-build overlay && meson compile -C overlay-build
+```
+
 Windows 11 (once the real backend lands): `Meson + MSVC + vcpkg`
 (ffmpeg, C++/WinRT for WGC). See `core/docs/WINDOWS_PORT.md`.
 

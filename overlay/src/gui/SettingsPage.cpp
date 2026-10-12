@@ -848,6 +848,27 @@ namespace gsr {
         return list;
     }
 
+    // SourisGSR: recording-only volumes 0-100 (OBS style). These never touch
+    // the system mixer; they are passed to the CLI as -mic/-system/-app-volume.
+    std::unique_ptr<List> SettingsPage::create_audio_volume_entry(const char *label, Entry **out_entry) {
+        auto list = std::make_unique<List>(List::Orientation::HORIZONTAL, List::Alignment::CENTER);
+        list->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), label, get_color_theme().text_color));
+
+        auto entry = std::make_unique<Entry>(get_theme().body_font_desc.c_str(), "100", (int)(2.0f*mgl::Text::get_font_size_from_font_description(get_theme().body_font_desc.c_str()) * 4));
+        entry->set_number_mode(true, 0, 100);
+        *out_entry = entry.get();
+        list->add_widget(std::move(entry));
+        return list;
+    }
+
+    std::unique_ptr<List> SettingsPage::create_audio_volumes() {
+        auto list = std::make_unique<List>(List::Orientation::VERTICAL);
+        list->add_widget(create_audio_volume_entry(TR("Microphone volume (recording only, 0-100):"), &mic_volume_entry_ptr));
+        list->add_widget(create_audio_volume_entry(TR("System volume (recording only, 0-100):"), &system_volume_entry_ptr));
+        list->add_widget(create_audio_volume_entry(TR("Application volume (recording only, 0-100):"), &app_volume_entry_ptr));
+        return list;
+    }
+
     std::unique_ptr<Widget> SettingsPage::create_audio_section() {
         auto audio_device_section_list = std::make_unique<List>(List::Orientation::VERTICAL);
         List *audio_device_section_list_ptr = audio_device_section_list.get();
@@ -856,6 +877,7 @@ namespace gsr {
         audio_section_ptr = subsection.get();
         audio_device_section_list_ptr->add_widget(create_add_audio_track_button());
         audio_device_section_list_ptr->add_widget(create_audio_track_section_list());
+        audio_device_section_list_ptr->add_widget(create_audio_volumes());
         audio_device_section_list_ptr->add_widget(create_audio_codec());
         return subsection;
     }
@@ -1840,6 +1862,21 @@ namespace gsr {
         record_area_box_ptr->set_selected_item(record_options.record_area_option);
         change_video_resolution_checkbox_ptr->set_checked(record_options.change_video_resolution);
         load_audio_tracks(record_options);
+        if(record_options.mic_volume < 0)
+            record_options.mic_volume = 0;
+        if(record_options.mic_volume > 100)
+            record_options.mic_volume = 100;
+        if(record_options.system_volume < 0)
+            record_options.system_volume = 0;
+        if(record_options.system_volume > 100)
+            record_options.system_volume = 100;
+        if(record_options.app_volume < 0)
+            record_options.app_volume = 0;
+        if(record_options.app_volume > 100)
+            record_options.app_volume = 100;
+        mic_volume_entry_ptr->set_text(std::to_string(record_options.mic_volume));
+        system_volume_entry_ptr->set_text(std::to_string(record_options.system_volume));
+        app_volume_entry_ptr->set_text(std::to_string(record_options.app_volume));
         color_range_box_ptr->set_selected_item(record_options.color_range);
         video_quality_box_ptr->set_selected_item(record_options.video_quality);
         video_codec_box_ptr->set_selected_item(record_options.video_codec);
@@ -2000,6 +2037,33 @@ namespace gsr {
         record_options.video_bitrate = sv_to_int<int32_t>(video_bitrate_entry_ptr->get_text());
         record_options.change_video_resolution = change_video_resolution_checkbox_ptr->is_checked();
         save_audio_tracks(record_options.audio_tracks_list, audio_track_section_list_ptr);
+        record_options.mic_volume = sv_to_int<int32_t>(mic_volume_entry_ptr->get_text());
+        record_options.system_volume = sv_to_int<int32_t>(system_volume_entry_ptr->get_text());
+        record_options.app_volume = sv_to_int<int32_t>(app_volume_entry_ptr->get_text());
+        if(record_options.mic_volume < 0) {
+            record_options.mic_volume = 0;
+            mic_volume_entry_ptr->set_text("0");
+        }
+        if(record_options.mic_volume > 100) {
+            record_options.mic_volume = 100;
+            mic_volume_entry_ptr->set_text("100");
+        }
+        if(record_options.system_volume < 0) {
+            record_options.system_volume = 0;
+            system_volume_entry_ptr->set_text("0");
+        }
+        if(record_options.system_volume > 100) {
+            record_options.system_volume = 100;
+            system_volume_entry_ptr->set_text("100");
+        }
+        if(record_options.app_volume < 0) {
+            record_options.app_volume = 0;
+            app_volume_entry_ptr->set_text("0");
+        }
+        if(record_options.app_volume > 100) {
+            record_options.app_volume = 100;
+            app_volume_entry_ptr->set_text("100");
+        }
         record_options.color_range = color_range_box_ptr->get_selected_id();
         record_options.video_quality = video_quality_box_ptr->get_selected_id();
         record_options.video_codec = video_codec_box_ptr->get_selected_id();

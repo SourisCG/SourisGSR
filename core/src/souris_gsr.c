@@ -7,6 +7,7 @@
 #include "../include/souris_gain.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 struct sgsr_recorder {
     sgsr_config config;

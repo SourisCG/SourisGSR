@@ -48,6 +48,11 @@ namespace gsr {
         int32_t video_bitrate = 8000;
         bool change_video_resolution = false;
         std::vector<AudioTrack> audio_tracks_list;
+        // SourisGSR: recording-only volumes 0-100 (OBS style). Never touch
+        // the system mixer; passed to the CLI as -mic/-system/-app-volume.
+        int32_t mic_volume = 100;
+        int32_t system_volume = 100;
+        int32_t app_volume = 100;
         std::string color_range = "limited";
         std::string video_quality = "very_high";
         std::string video_codec = "auto";
