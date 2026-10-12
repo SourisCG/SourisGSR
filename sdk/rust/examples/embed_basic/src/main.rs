@@ -1,10 +1,10 @@
-//! Ejemplo mínimo: app Rust con SourisGSR embebido como motor.
+//! Minimal example: Rust app with SourisGSR embedded as its engine.
 use souris_gsr_sdk::{Codec, Recorder, Source};
 use std::time::Duration;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let rec = Recorder::builder()
-        .source(Source::portal()) // Wayland: picker portal. Win: WGC.
+        .source(Source::portal()) // Wayland: portal picker. Win: WGC.
         .fps(60)
         .codec(Codec::Auto)
         .output("video.mp4")

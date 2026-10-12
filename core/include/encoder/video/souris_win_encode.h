@@ -1,11 +1,11 @@
 #ifndef SOURIS_WIN_ENCODE_H
 #define SOURIS_WIN_ENCODE_H
 
-/* SourisGSR — encode HW en Windows.
-   Prioridad: NVENC > AMF > QuickSync > MediaFoundation (fallback SDR).
-   En Linux este header solo documenta el mapping; la selección real vive
-   en FFmpeg (h264_nvenc/hevc_nvenc/av1_nvenc, h264_amf/hevc_amf,
-   h264_qsv/hevc_qsv). En Windows el backend D3D11 alimenta hwupload. */
+/* SourisGSR — HW encoding on Windows.
+   Priority: NVENC > AMF > QuickSync > MediaFoundation (SDR fallback).
+   On Linux this header only documents the mapping; the real selection lives
+   in FFmpeg (h264_nvenc/hevc_nvenc/av1_nvenc, h264_amf/hevc_amf,
+   h264_qsv/hevc_qsv). On Windows the D3D11 backend feeds hwupload. */
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +19,7 @@ typedef enum {
     SOURIS_WIN_ENCODER_MF,
 } souris_win_encoder;
 
-/* Nombre del encoder FFmpeg para un codec dado ("h264"/"hevc"/"av1"). */
+/* FFmpeg encoder name for a given codec ("h264"/"hevc"/"av1"). */
 const char* souris_win_ffmpeg_encoder_name(souris_win_encoder enc, const char *codec);
 
 #ifdef __cplusplus

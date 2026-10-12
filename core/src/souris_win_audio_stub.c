@@ -1,6 +1,6 @@
-/* SourisGSR — stub multiplataforma de audio Windows (WASAPI).
-   En Linux devuelve no-soportado. Ver core/docs/WINDOWS_PORT.md para el
-   plan de implementación real. */
+/* SourisGSR — cross-platform stub for Windows audio (WASAPI).
+   On Linux it returns unsupported. See core/docs/WINDOWS_PORT.md for the
+   real implementation plan. */
 
 #include "../include/souris_win_audio.h"
 

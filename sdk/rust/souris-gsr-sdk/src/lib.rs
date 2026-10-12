@@ -1,10 +1,10 @@
-//! SourisGSR SDK — motor de grabación embebible (sin spawnear procesos).
+//! SourisGSR SDK — embeddable recording engine (no child processes).
 //!
-//! Control total: fuentes video/audio, volúmenes 0-100% solo-grabación
-//! (nunca el mixer del sistema), replay buffer, streaming, screenshots,
-//! pausa/reanudar y eventos. Idiomático, sin `unsafe` público.
+//! Full control: video/audio sources, 0-100% recording-only volumes
+//! (never the system mixer), replay buffer, streaming, screenshots,
+//! pause/resume and events. Idiomatic, no public `unsafe`.
 //!
-//! Ejemplo:
+//! Example:
 //! ```no_run
 //! use souris_gsr_sdk::{Recorder, Source, Codec};
 //! let rec = Recorder::builder()
@@ -13,7 +13,7 @@
 //!     .codec(Codec::Auto)
 //!     .mic_volume(80)
 //!     .system_volume(100)
-//!     .on_event(|e| println!("evento: {e:?}"))
+//!     .on_event(|e| println!("event: {e:?}"))
 //!     .start()
 //!     .unwrap();
 //! rec.stop().unwrap();
@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-/// 0-100% tipo OBS. `Volume::percent` clampea.
+/// OBS-style 0-100%. `Volume::percent` clamps.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Volume(u8);
 
@@ -52,9 +52,9 @@ impl Default for Volume {
     }
 }
 
-/// Fuente de video. En Wayland `portal()` abre el picker del compositor
-/// (ventana individual donde el backend lo soporta: GNOME/KDE/Hyprland).
-/// En Windows `window_hwnd()` usa WGC (ventana individual real).
+/// Video source. On Wayland `portal()` opens the compositor picker
+/// (individual window where the backend supports it: GNOME/KDE/Hyprland).
+/// On Windows `window_hwnd()` uses WGC (a real individual window).
 #[derive(Debug, Clone)]
 pub enum Source {
     Monitor { id: String },
@@ -123,11 +123,11 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::InvalidArg(m) => write!(f, "argumento inválido: {m}"),
-            Error::Unsupported(m) => write!(f, "no soportado: {m}"),
-            Error::NoDevice(m) => write!(f, "sin dispositivo: {m}"),
-            Error::AlreadyRunning => write!(f, "ya está grabando"),
-            Error::NotRunning => write!(f, "no está grabando"),
+            Error::InvalidArg(m) => write!(f, "invalid argument: {m}"),
+            Error::Unsupported(m) => write!(f, "unsupported: {m}"),
+            Error::NoDevice(m) => write!(f, "no device: {m}"),
+            Error::AlreadyRunning => write!(f, "already recording"),
+            Error::NotRunning => write!(f, "not recording"),
             Error::Generic(m) => write!(f, "{m}"),
         }
     }
@@ -137,7 +137,7 @@ impl std::error::Error for Error {}
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Config completa del recorder embebido.
+/// Full config of the embedded recorder.
 #[derive(Debug, Clone)]
 pub struct Config {
     pub source: Source,
@@ -171,7 +171,7 @@ impl Default for Config {
     }
 }
 
-/// Builder con validación 0-100 y de fps.
+/// Builder with 0-100 and fps validation.
 pub struct Builder {
     cfg: Config,
     on_event: Option<Arc<dyn Fn(Event) + Send + Sync>>,
@@ -194,12 +194,12 @@ impl Builder {
         self.cfg.output = p.into();
         self
     }
-    /// Equivale a `-a` del CLI, ej: `["default_output|vol=80", "default_input"]`.
+    /// Same as CLI `-a`, e.g. `["default_output|vol=80", "default_input"]`.
     pub fn audio_inputs(mut self, v: Vec<String>) -> Self {
         self.cfg.audio_inputs = v;
         self
     }
-    /// 0-100 solo grabación (nunca sistema).
+    /// 0-100 recording only (never the system).
     pub fn mic_volume(mut self, p: u8) -> Self {
         self.cfg.mic_volume = Volume::percent(p);
         self
@@ -229,7 +229,7 @@ impl Builder {
     }
 }
 
-/// Recorder embebido. `stop()` consume (como el motor real libera).
+/// Embedded recorder. `stop()` consumes (like the real engine frees).
 pub struct Recorder {
     cfg: Config,
     on_event: Option<Arc<dyn Fn(Event) + Send + Sync>>,
@@ -250,13 +250,13 @@ impl Recorder {
 
     fn start(cfg: Config, on_event: Option<Arc<dyn Fn(Event) + Send + Sync>>) -> Result<Self> {
         if cfg.fps == 0 {
-            return Err(Error::InvalidArg("fps debe ser >= 1".into()));
+            return Err(Error::InvalidArg("fps must be >= 1".into()));
         }
-        // Los volúmenes ya vienen clampeados por Volume::percent.
+        // Volumes already come clamped via Volume::percent.
         let r = Self { cfg, on_event, state: Mutex::new(State::Recording) };
         r.emit(Event::Started);
-        // TODO(ffi): con feature `ffi`, llamar a sgsr_start() con la C ABI
-        // (include/souris_gsr.h) en vez de este stub de estado.
+        // TODO(ffi): with the `ffi` feature, call sgsr_start() from the C ABI
+        // (include/souris_gsr.h) instead of this state stub.
         Ok(r)
     }
 
@@ -291,7 +291,7 @@ impl Recorder {
         Ok(())
     }
 
-    /// Volúmenes en caliente 0-100, solo grabación.
+    /// Hot 0-100 volumes, recording only.
     pub fn set_volumes(&self, mic: u8, system: u8, app: u8) -> Result<()> {
         self.ensure_running()?;
         let _ = (Volume::percent(mic), Volume::percent(system), Volume::percent(app));
@@ -302,7 +302,7 @@ impl Recorder {
     pub fn save_replay(&self, path: &Path) -> Result<()> {
         self.ensure_running()?;
         if self.cfg.replay.is_none() {
-            return Err(Error::Unsupported("replay no configurado (usa .replay())".into()));
+            return Err(Error::Unsupported("replay not configured (use .replay())".into()));
         }
         self.emit(Event::ReplaySaved { path: path.to_path_buf() });
         Ok(())
@@ -330,15 +330,15 @@ impl Recorder {
     }
 }
 
-/// Helpers de descubrimiento (con `ffi` consultan a la C ABI).
+/// Discovery helpers (with `ffi` they query the C ABI).
 pub fn list_video_sources() -> Vec<Source> {
     vec![Source::monitor("screen"), Source::Portal]
 }
 
 pub fn list_audio_devices() -> Vec<(String, String)> {
     vec![
-        ("default_output".into(), "Default output (sistema)".into()),
-        ("default_input".into(), "Default input (micrófono)".into()),
+        ("default_output".into(), "Default output (system)".into()),
+        ("default_input".into(), "Default input (microphone)".into()),
     ]
 }
 
@@ -347,14 +347,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn volume_clampa_y_gain() {
+    fn volume_clamps_and_gain() {
         assert_eq!(Volume::percent(200).get(), 100);
         assert_eq!(Volume::percent(80).gain(), 0.8);
         assert_eq!(Volume::muted().gain(), 0.0);
     }
 
     #[test]
-    fn builder_defaults_son_100() {
+    fn builder_defaults_are_100() {
         let c = Config::default();
         assert_eq!(c.mic_volume.get(), 100);
         assert_eq!(c.system_volume.get(), 100);
@@ -370,14 +370,14 @@ mod tests {
     }
 
     #[test]
-    fn replay_sin_config_da_unsupported() {
+    fn replay_without_config_is_unsupported() {
         let r = Recorder::builder().start().unwrap();
         assert!(matches!(r.save_replay(Path::new("/tmp/x.mp4")), Err(Error::Unsupported(_))));
         r.stop().unwrap();
     }
 
     #[test]
-    fn set_volumes_acepta_0_100() {
+    fn set_volumes_accepts_0_100() {
         let r = Recorder::builder().start().unwrap();
         r.set_volumes(0, 80, 100).unwrap();
         r.stop().unwrap();

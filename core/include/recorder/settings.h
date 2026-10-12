@@ -47,9 +47,9 @@ typedef struct {
     int64_t audio_bitrate;
     int64_t fps;
     int64_t replay_buffer_size_secs;
-    /* SourisGSR: volúmenes SOLO grabación 0-100 (tipo OBS). Default 100.
-       mic = default_input/micrófonos, system = default_output/monitores,
-       app = app:/app-inverse:. No tocan el mixer del sistema. */
+    /* SourisGSR: recording-only volumes 0-100 (OBS style). Default 100.
+       mic = default_input/microphones, system = default_output/monitors,
+       app = app:/app-inverse:. Never touch the system mixer. */
     int mic_volume_percent;
     int system_volume_percent;
     int app_volume_percent;
@@ -59,8 +59,8 @@ typedef struct {
     vec2i region_position;
 } gsr_recorder_settings;
 
-/* SourisGSR: inicializa solo los campos de volumen a 100% (llamar después
-   de memset 0 si se construye settings a mano fuera del CLI). */
+/* SourisGSR: default just the volume fields to 100% (call after
+   memset 0 when building settings by hand outside the CLI). */
 static inline void gsr_recorder_settings_init_souris_volumes(gsr_recorder_settings *s) {
     if(s) {
         s->mic_volume_percent = 100;

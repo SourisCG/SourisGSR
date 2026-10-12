@@ -56,8 +56,8 @@ void souris_gain_apply_fltp(float **data, int nb_channels, int nb_samples, float
     }
 }
 
-/* Heurística simple: default_input / *input* / *mic* (insensible a caso)
-   se consideran micrófonos; el resto de devices son salidas/sistema. */
+/* Simple heuristic: default_input / *input* / *mic* (case-insensitive)
+   count as microphones; every other device is output/system. */
 static bool souris_name_is_mic(const char *name) {
     if(!name || !name[0])
         return false;
@@ -65,7 +65,7 @@ static bool souris_name_is_mic(const char *name) {
         return true;
     if(strcasecmp(name, "default_output") == 0)
         return false;
-    /* strcasestr es GNU; implementamos búsqueda insensible manual simple */
+    /* strcasestr is GNU; use a small manual case-insensitive search instead */
     char lower[256];
     size_t i = 0;
     for(; name[i] && i < sizeof(lower) - 1; ++i) {

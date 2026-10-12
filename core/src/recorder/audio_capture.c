@@ -17,8 +17,8 @@
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 
-/* SourisGSR: aplica gain SOLO grabación al AVFrame ya convertido.
-   Soporta S16/S32/FLT (intercalado) y FLTP (planar). 1.0 = no-op. */
+/* SourisGSR: apply recording-only gain to the converted AVFrame.
+   Supports S16/S32/FLT (interleaved) and FLTP (planar). 1.0 = no-op. */
 static void souris_apply_gain_to_frame(AVFrame *frame, AVCodecContext *cc, float gain) {
     if(!frame || !cc || gain == 1.0f)
         return;
@@ -323,11 +323,11 @@ static void* audio_device_thread(void *userdata) {
             else
                 device->frame->data[0] = (uint8_t*)sound_buffer;
 
-            /* SourisGSR: gain SOLO grabación. Si no hubo conversión (data
-               apunta al buffer del device) no podemos modificarlo in-place
-               de forma segura para todos los backends, así que solo se
-               aplica cuando el frame es nuestro (needs_audio_conversion).
-               En la práctica needs_audio_conversion=true siempre. */
+            /* SourisGSR: recording-only gain. When there was no conversion
+               (data points at the device buffer) we can't safely modify it
+               in place for every backend, so it only applies when the frame
+               is ours (needs_audio_conversion). In practice
+               needs_audio_conversion is always true. */
             if(needs_audio_conversion && device->volume_gain != 1.0f)
                 souris_apply_gain_to_frame(device->frame, track->codec_context, device->volume_gain);
 
@@ -555,7 +555,7 @@ int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_a
         gsr_audio_device_capture *device = &self->audio_devices[i];
         device->audio_input = *audio_input;
         device->src_filter_ctx = use_amix ? src_filter_ctx[i] : NULL;
-        /* SourisGSR: gain efectivo ya resuelto aquí (per-input vol= o global). */
+        /* SourisGSR: effective gain resolved here (per-input vol= or global). */
         const bool is_app = audio_input->type == GSR_AUDIO_INPUT_TYPE_APPLICATION;
         const bool is_mic = souris_device_name_is_mic(audio_input->name);
         device->volume_gain = souris_resolve_gain(audio_input->has_custom_volume, audio_input->volume,

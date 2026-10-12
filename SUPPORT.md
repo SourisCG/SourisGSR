@@ -1,22 +1,23 @@
-# Soporte — SourisGSR
+# Support — SourisGSR
 
-## Plataformas oficiales
+## Officially supported platforms
 - **Linux Wayland** (GNOME, KDE Plasma, Hyprland) — portal + PipeWire + KMS/DRM.
 - **Windows 11 22H2+** — WGC + NVENC/AMF/QuickSync + WASAPI.
 
-## Best-effort sin SLA (puede quedar WONTFIX)
-- **X11** (código congelado, solo se aceptan PRs).
-- **Windows 10** (WGC existe pero no se testea; NVFBC está deprecado por NVIDIA).
+## Best-effort without SLA (may end up WONTFIX)
+- **X11** (code frozen, PRs only).
+- **Windows 10** (WGC exists but is not tested; NVFBC is deprecated by NVIDIA).
 
-Si reportas un bug de X11/Win10, indica OS, compositor/driver y si reproduce
-en Wayland/Win11. Sin esa info se cerrará como `needs-info`, y aunque se
-confirme puede marcarse `wontfix-x11-win10` por prioridad del proyecto.
+If you report an X11/Win10 bug, state the OS, compositor/driver and whether it
+reproduces on Wayland/Win11. Without that info it will be closed as
+`needs-info`, and even if confirmed it may be tagged `wontfix-x11-win10`
+given project priorities.
 
-## Audio/volumen
-El modificador 0-100% es **solo grabación** (gain post-captura). Si tu reporte
-es "no se escucha más alto el sistema", es comportamiento esperado: el sistema
-no se toca por diseño.
+## Audio/volume
+The 0-100% modifier is **recording only** (post-capture gain). If your report
+is "the system doesn't sound louder", that is expected behavior: the system
+mixer is never touched by design.
 
-## De dónde viene el código
-Fork de `dec05eba/gpu-screen-recorder` + `-ui` (GPL-3.0-only). Los bugs que
-reproduzcan en upstream puro deben reportarse también arriba si es posible.
+## Where the code comes from
+Fork of `dec05eba/gpu-screen-recorder` + `-ui` (GPL-3.0-only). Bugs that
+reproduce on pure upstream should also be reported upstream when possible.

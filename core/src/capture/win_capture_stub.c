@@ -1,14 +1,14 @@
-/* SourisGSR — stub multiplataforma de captura Windows.
-   En Linux compila y devuelve "no soportado" para no romper el build.
-   En Windows (_WIN32) este archivo debe reemplazarse por la implementación
-   real WGC + DXGI (ver core/docs/WINDOWS_PORT.md). */
+/* SourisGSR — cross-platform stub for Windows capture.
+   On Linux it compiles and returns "unsupported" to keep the build green.
+   On Windows (_WIN32) this file must be replaced by the real
+   WGC + DXGI implementation (see core/docs/WINDOWS_PORT.md). */
 
 #include "../../include/capture/win_capture.h"
 
 int souris_win_capture_available(souris_win_capture_backend backend) {
 #ifdef _WIN32
     (void)backend;
-    /* TODO(win): implementar chequeo real:
+    /* TODO(win): implement the real check:
        - WGC: winrt::Windows::Graphics::Capture::GraphicsCaptureSession::IsSupported()
        - DXGI: D3D11CreateDevice + IDXGIOutput1::DuplicateOutput */
     return 0;

@@ -1,11 +1,11 @@
 #ifndef SOURIS_GSR_H
 #define SOURIS_GSR_H
 
-/* SourisGSR — C ABI estable para el SDK Rust y apps embebidas.
-   Expone TODAS las funciones del programa (grabación, replay, streaming,
-   screenshots, overlays, volúmenes) sin exponer C++ ni FFmpeg.
-   Versionado: sgsr_version(). Nunca romper compat: solo añadir funciones
-   sgsr_*_v2. Licencia: GPL-3.0-only (igual que el core). */
+/* SourisGSR — stable C ABI for the Rust SDK and embedders.
+   Exposes ALL program features (recording, replay, streaming,
+   screenshots, overlays, volumes) without leaking C++ or FFmpeg.
+   Versioning: sgsr_version(). Never break compat: only add
+   sgsr_*_v2 functions. License: GPL-3.0-only (same as core). */
 
 #include <stddef.h>
 #include <stdint.h>
@@ -30,15 +30,15 @@ typedef enum {
 
 typedef enum {
     SGSR_SOURCE_MONITOR = 0,
-    SGSR_SOURCE_WINDOW = 1,   /* ventana individual: portal (Wayland) / HWND (WGC Win) */
-    SGSR_SOURCE_PORTAL = 2,   /* picker del compositor (Wayland) */
+    SGSR_SOURCE_WINDOW = 1,   /* individual window: portal (Wayland) / HWND (WGC on Win) */
+    SGSR_SOURCE_PORTAL = 2,   /* compositor picker (Wayland) */
     SGSR_SOURCE_REGION = 3,
 } sgsr_source_kind;
 
 typedef struct {
     sgsr_source_kind kind;
-    char id[256];    /* monitor index / window id (X11) / HWND (Win) / token portal */
-    char title[256]; /* título ventana/monitor para pickers */
+    char id[256];    /* monitor index / window id (X11) / HWND (Win) / portal token */
+    char title[256]; /* window/monitor title for pickers */
     int width;
     int height;
 } sgsr_source;
@@ -46,7 +46,7 @@ typedef struct {
 typedef struct {
     char name[256];
     char description[256];
-    int is_input; /* 1 mic/entrada, 0 salida/sistema */
+    int is_input; /* 1 mic/input, 0 output/system */
 } sgsr_audio_device;
 
 typedef enum {
@@ -57,7 +57,7 @@ typedef enum {
     SGSR_EVENT_REPLAY_SAVED,
     SGSR_EVENT_FRAME_DROPPED,
     SGSR_EVENT_ERROR,
-    SGSR_EVENT_LEVEL_METER, /* VU para UI: value 0.0-1.0 en data0 */
+    SGSR_EVENT_LEVEL_METER, /* VU for UI: value 0.0-1.0 in data0 */
 } sgsr_event_kind;
 
 typedef struct {
@@ -74,15 +74,15 @@ typedef struct {
     int fps;
     const char *video_codec; /* "auto","h264","hevc","av1" */
     const char *container;   /* "mp4","mkv","mov" */
-    const char *output_path; /* o URL rtmp/srt para streaming */
-    const char *audio_inputs[8]; /* mismos ids que -a del CLI */
+    const char *output_path; /* or rtmp/srt URL for streaming */
+    const char *audio_inputs[8]; /* same ids as CLI -a */
     int num_audio_inputs;
-    /* Volúmenes SOLO grabación 0-100 tipo OBS. No tocan el sistema. */
+    /* Recording-only volumes 0-100, OBS style. Never touch the system. */
     int mic_volume_percent;
     int system_volume_percent;
     int app_volume_percent;
-    int replay_buffer_secs;  /* 0 = grabación normal */
-    int record_cursor;       /* 1 sí, 0 no */
+    int replay_buffer_secs;  /* 0 = normal recording */
+    int record_cursor;       /* 1 yes, 0 no */
     sgsr_event_cb on_event;
     void *event_userdata;
 } sgsr_config;
@@ -90,17 +90,17 @@ typedef struct {
 const char* sgsr_version(void);
 int sgsr_api_version(void);
 
-/* Ciclo de vida del motor embebido (sin spawnear procesos). */
+/* Embedded engine lifecycle (no child processes spawned). */
 sgsr_error sgsr_init(void);
 void sgsr_shutdown(void);
 
-/* Enumeración (el llamador libera con sgsr_free_*). */
+/* Enumeration (caller frees with sgsr_free_*). */
 sgsr_error sgsr_enumerate_video_sources(sgsr_source **out, size_t *out_n);
 sgsr_error sgsr_enumerate_audio_devices(sgsr_audio_device **out, size_t *out_n);
 void sgsr_free_video_sources(sgsr_source *p);
 void sgsr_free_audio_devices(sgsr_audio_device *p);
 
-/* Control total. config debe seguir viva durante start (se copia). */
+/* Full control. config must stay alive during start (it is copied). */
 sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out);
 sgsr_error sgsr_stop(sgsr_recorder *r);
 sgsr_error sgsr_pause(sgsr_recorder *r);
@@ -108,7 +108,7 @@ sgsr_error sgsr_resume(sgsr_recorder *r);
 sgsr_error sgsr_save_replay(sgsr_recorder *r, const char *path);
 sgsr_error sgsr_screenshot(sgsr_recorder *r, const char *path);
 
-/* Volúmenes en caliente 0-100 (solo grabación). */
+/* Hot 0-100 volumes (recording only). */
 sgsr_error sgsr_set_volumes(sgsr_recorder *r, int mic, int system, int app);
 
 const char* sgsr_strerror(sgsr_error e);

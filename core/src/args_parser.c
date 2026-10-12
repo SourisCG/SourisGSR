@@ -280,7 +280,7 @@ static bool args_parser_set_values(args_parser *self) {
     self->settings.audio_bitrate = args_get_i64_by_key(self->args, NUM_ARGS, "-ab", 0);
     self->settings.audio_bitrate *= 1000LL;
 
-    /* SourisGSR: defaults 100% (sin cambio). Solo gain de grabación. */
+    /* SourisGSR: defaults 100% (no change). Recording-only gain. */
     self->settings.mic_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-mic-volume", 100);
     self->settings.system_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-system-volume", 100);
     self->settings.app_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-app-volume", 100);
@@ -585,7 +585,7 @@ args_parse_result args_parser_parse(args_parser *self, int argc, char **argv, co
     self->args[arg_index++] = (Arg){ .key = "-low-power",                     .optional = true,  .list = false, .type = ARG_TYPE_BOOLEAN };
     self->args[arg_index++] = (Arg){ .key = "-exclude-metadata",              .optional = true,  .list = false, .type = ARG_TYPE_BOOLEAN };
     self->args[arg_index++] = (Arg){ .key = "-ipc",                           .optional = true,  .list = false, .type = ARG_TYPE_STRING  };
-    /* SourisGSR: volúmenes SOLO grabación 0-100 tipo OBS. No tocan el sistema. */
+    /* SourisGSR: recording-only volumes 0-100, OBS style. Never touch the system. */
     self->args[arg_index++] = (Arg){ .key = "-mic-volume",                    .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };
     self->args[arg_index++] = (Arg){ .key = "-system-volume",                 .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };
     self->args[arg_index++] = (Arg){ .key = "-app-volume",                    .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };

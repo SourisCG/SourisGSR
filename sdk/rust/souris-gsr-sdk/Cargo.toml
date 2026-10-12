@@ -2,7 +2,7 @@
 name = "souris-gsr-sdk"
 version = "0.1.0"
 edition = "2021"
-description = "SDK Rust embebible para SourisGSR (motor de grabación). Control total, GPL-3.0-only."
+description = "Embeddable Rust SDK for SourisGSR (recording engine). Full control, GPL-3.0-only."
 license = "GPL-3.0-only"
 repository = "https://github.com/SourisCG/SourisGSR"
 
@@ -12,4 +12,4 @@ crate-type = ["rlib"]
 
 [features]
 default = []
-ffi = []  # link contra libsouris_gsr (C ABI) cuando esté disponible
+ffi = []  # link against libsouris_gsr (C ABI) once available

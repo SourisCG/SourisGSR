@@ -54,8 +54,8 @@ static bool parse_audio_input_callback(const char *sub, size_t size, void *userd
     if(size == 0)
         return true;
 
-    /* SourisGSR: token vol=NN (0-100) aplica gain SOLO grabación al último
-       input añadido. Ej: -a "default_output|vol=80|default_input|vol=90" */
+    /* SourisGSR: vol=NN token (0-100) applies recording-only gain to the
+       last added input. E.g.: -a "default_output|vol=80|default_input|vol=90" */
     if(size > 4 && (sub[0] == 'v' || sub[0] == 'V') && (sub[1] == 'o' || sub[1] == 'O') && (sub[2] == 'l' || sub[2] == 'L') && sub[3] == '=') {
         char numbuf[16];
         size_t nlen = size - 4 < sizeof(numbuf) - 1 ? size - 4 : sizeof(numbuf) - 1;
@@ -67,7 +67,7 @@ static bool parse_audio_input_callback(const char *sub, size_t size, void *userd
         if(percent > 100)
             percent = 100;
         if(parse_userdata->merged_audio_inputs->num_items == 0) {
-            gsr_log(GSR_LOG_LEVEL_ERROR, "vol= token sin audio input previo (ej: -a \"default_output|vol=80\")");
+            gsr_log(GSR_LOG_LEVEL_ERROR, "vol= token without a prior audio input (e.g.: -a \"default_output|vol=80\")");
             parse_userdata->error = GSR_ERROR_GENERIC;
             return false;
         }

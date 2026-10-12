@@ -1,16 +1,16 @@
 #pragma once
 
-/* SourisGSR — abstracción del backend del overlay estilo ShadowPlay.
-   Reuso máximo: la lógica UX (hotkeys, replay, selección, config.json,
-   invocación al CLI) se queda intacta. Solo se abstrae el dibujo/input.
+/* SourisGSR — ShadowPlay-style overlay backend abstraction.
+   Maximum reuse: the UX logic (hotkeys, replay, selection, config.json,
+   CLI invocation) stays untouched. Only drawing/input is abstracted.
 
-   - Linux (existente, congelar): Overlay+EGL/X11/Wayland/Pango,
+   - Linux (existing, frozen): Overlay+EGL/X11/Wayland/Pango,
      GlobalHotkeys evdev/X11.
-   - Windows (nuevo): OverlayWin con Win32 layered + D3D11 + Direct2D/
-     DirectWrite, GlobalHotkeysWin con RegisterHotKey.
+   - Windows (new): OverlayWin with Win32 layered + D3D11 + Direct2D/
+     DirectWrite, GlobalHotkeysWin with RegisterHotKey.
 
-   La UI nunca captura video directamente; siempre maneja el CLI/core
-   (igual que hoy) o el SDK Rust embebido. */
+   The UI never captures video directly; it always drives the CLI/core
+   (as today) or the embedded Rust SDK. */
 
 namespace souris {
 

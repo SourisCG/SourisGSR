@@ -37,8 +37,8 @@ struct gsr_audio_device_capture {
     pthread_t thread;
     bool thread_created;
     gsr_audio_device_thread_userdata thread_userdata;
-    /* SourisGSR: gain SOLO grabación 0.0-1.0 ya resuelto (per-input vol= *
-       globales mic/system/app). Default 1.0. */
+    /* SourisGSR: recording-only gain 0.0-1.0, already resolved (per-input vol=
+       times global mic/system/app). Default 1.0. */
     float volume_gain;
 };
 
@@ -86,7 +86,7 @@ void gsr_audio_capture_unlock_filter(gsr_audio_capture *self);
 int gsr_audio_init_filter_graph(AVCodecContext *audio_codec_context, AVFilterGraph **graph, AVFilterContext **sink, AVFilterContext **src_filter_ctx, size_t num_sources);
 
 /* Returns a |gsr_error| value. Opens the sound devices of one audio track.
-   mic/system/app_percent: 0-100, gain SOLO grabación (no sistema). */
+   mic/system/app_percent: 0-100, recording-only gain (not system). */
 int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix, int mic_volume_percent, int system_volume_percent, int app_volume_percent);
 #ifdef GSR_APP_AUDIO
 /* Returns a |gsr_error| value. Creates a combined sink that application audio is routed to */
