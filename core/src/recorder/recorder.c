@@ -353,13 +353,13 @@ static int recorder_setup_audio_track(gsr_recorder *self, const gsr_merged_audio
     if(gsr_audio_inputs_has_app_audio(merged_audio_inputs)) {
         assert(!use_amix);
 #ifdef GSR_APP_AUDIO
-        return gsr_audio_track_init_application_input(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, self->pipewire_audio);
+        return gsr_audio_track_init_application_input(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, self->pipewire_audio, self->settings.app_volume_percent);
 #else
         return GSR_ERROR_UNSUPPORTED;
 #endif
     }
 
-    return gsr_audio_track_init_device_inputs(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, src_filter_ctx, use_amix);
+    return gsr_audio_track_init_device_inputs(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, src_filter_ctx, use_amix, self->settings.mic_volume_percent, self->settings.system_volume_percent, self->settings.app_volume_percent);
 }
 
 static int recorder_setup_audio(gsr_recorder *self) {

@@ -1,0 +1,3 @@
+[workspace]
+members = ["souris-gsr-sdk", "examples/embed_basic", "examples/embed_replay"]
+resolver = "2"

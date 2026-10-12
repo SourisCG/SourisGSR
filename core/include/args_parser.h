@@ -9,7 +9,7 @@
 
 typedef struct gsr_egl gsr_egl;
 
-#define NUM_ARGS 40
+#define NUM_ARGS 43
 
 typedef enum {
     GSR_CAPTURE_SOURCE_TYPE_WINDOW,

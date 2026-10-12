@@ -54,8 +54,33 @@ static bool parse_audio_input_callback(const char *sub, size_t size, void *userd
     if(size == 0)
         return true;
 
+    /* SourisGSR: token vol=NN (0-100) aplica gain SOLO grabación al último
+       input añadido. Ej: -a "default_output|vol=80|default_input|vol=90" */
+    if(size > 4 && (sub[0] == 'v' || sub[0] == 'V') && (sub[1] == 'o' || sub[1] == 'O') && (sub[2] == 'l' || sub[2] == 'L') && sub[3] == '=') {
+        char numbuf[16];
+        size_t nlen = size - 4 < sizeof(numbuf) - 1 ? size - 4 : sizeof(numbuf) - 1;
+        memcpy(numbuf, sub + 4, nlen);
+        numbuf[nlen] = '\0';
+        int percent = atoi(numbuf);
+        if(percent < 0)
+            percent = 0;
+        if(percent > 100)
+            percent = 100;
+        if(parse_userdata->merged_audio_inputs->num_items == 0) {
+            gsr_log(GSR_LOG_LEVEL_ERROR, "vol= token sin audio input previo (ej: -a \"default_output|vol=80\")");
+            parse_userdata->error = GSR_ERROR_GENERIC;
+            return false;
+        }
+        gsr_audio_input *last = &parse_userdata->merged_audio_inputs->items[parse_userdata->merged_audio_inputs->num_items - 1];
+        last->volume = (float)percent / 100.0f;
+        last->has_custom_volume = true;
+        return true;
+    }
+
     gsr_audio_input audio_input;
     memset(&audio_input, 0, sizeof(audio_input));
+    audio_input.volume = 1.0f;
+    audio_input.has_custom_volume = false;
     snprintf(audio_input.name, sizeof(audio_input.name), "%.*s", (int)size, sub);
 
     const size_t name_size = strlen(audio_input.name);

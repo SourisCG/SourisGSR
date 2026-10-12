@@ -37,6 +37,9 @@ struct gsr_audio_device_capture {
     pthread_t thread;
     bool thread_created;
     gsr_audio_device_thread_userdata thread_userdata;
+    /* SourisGSR: gain SOLO grabación 0.0-1.0 ya resuelto (per-input vol= *
+       globales mic/system/app). Default 1.0. */
+    float volume_gain;
 };
 
 /* TODO: Instead of having a thread for each audio device, have one thread for all of them and read the data with non-blocking read */
@@ -82,11 +85,12 @@ void gsr_audio_capture_unlock_filter(gsr_audio_capture *self);
 /* Returns 0 on success, or a negative value on failure. |src_filter_ctx| must have room for |num_sources| items */
 int gsr_audio_init_filter_graph(AVCodecContext *audio_codec_context, AVFilterGraph **graph, AVFilterContext **sink, AVFilterContext **src_filter_ctx, size_t num_sources);
 
-/* Returns a |gsr_error| value. Opens the sound devices of one audio track */
-int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix);
+/* Returns a |gsr_error| value. Opens the sound devices of one audio track.
+   mic/system/app_percent: 0-100, gain SOLO grabación (no sistema). */
+int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix, int mic_volume_percent, int system_volume_percent, int app_volume_percent);
 #ifdef GSR_APP_AUDIO
 /* Returns a |gsr_error| value. Creates a combined sink that application audio is routed to */
-int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio);
+int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int app_volume_percent);
 #endif
 void gsr_audio_track_deinit(gsr_audio_track *self);
 

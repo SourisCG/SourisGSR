@@ -65,6 +65,11 @@ src = [
     'src/wayland_host_bridge.c',
     'src/dbus.c',
     'src/sound.c',
+    'src/souris_gain.c',
+    'src/souris_gsr.c',
+    'src/capture/win_capture_stub.c',
+    'src/souris_win_audio_stub.c',
+    'src/encoder/video/souris_win_encode.c',
     'src/cli/main.c',
 ]
 

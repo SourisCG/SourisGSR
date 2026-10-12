@@ -1,0 +1,8 @@
+# SourisGSR
+sdk/rust/target/
+core/build/
+overlay/build/
+build/
+*.o
+*.so
+*.dll

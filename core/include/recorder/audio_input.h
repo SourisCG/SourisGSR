@@ -17,6 +17,10 @@ typedef struct {
     char name[GSR_AUDIO_INPUT_NAME_MAX_SIZE];
     gsr_audio_input_type type;
     bool inverted;
+    /* SourisGSR: gain SOLO grabación 0.0-1.0 (0-100% tipo OBS). Default 1.0.
+       Nunca modifica el volumen del sistema. */
+    float volume;
+    bool has_custom_volume;
 } gsr_audio_input;
 
 typedef struct {

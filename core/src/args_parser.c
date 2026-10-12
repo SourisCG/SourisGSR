@@ -207,7 +207,7 @@ static void usage_header(void) {
            "[-fallback-cpu-encoding yes|no] [-o <output_file>] [-ro <output_directory>] [-ffmpeg-opts <options>] [-ffmpeg-video-opts <options>] [-ffmpeg-audio-opts <options>] "
            " [-auth <token>] [--list-capture-options [card_path]] "
            "[--list-monitors] [--list-audio-devices] [--list-application-audio] [--list-v4l2-devices] [-write-first-frame-ts yes|no] [-low-power yes|no] "
-           "[-ipc <socket_path>] [-v yes|no] [-gl-debug yes|no] [-exclude-metadata yes|no] [--version] [-h|--help]\n", program_name);
+           "[-ipc <socket_path>] [-mic-volume 0-100] [-system-volume 0-100] [-app-volume 0-100] [-v yes|no] [-gl-debug yes|no] [-exclude-metadata yes|no] [--version] [-h|--help]\n", program_name);
     fflush(stdout);
 }
 
@@ -279,6 +279,11 @@ static bool args_parser_set_values(args_parser *self) {
 
     self->settings.audio_bitrate = args_get_i64_by_key(self->args, NUM_ARGS, "-ab", 0);
     self->settings.audio_bitrate *= 1000LL;
+
+    /* SourisGSR: defaults 100% (sin cambio). Solo gain de grabación. */
+    self->settings.mic_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-mic-volume", 100);
+    self->settings.system_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-system-volume", 100);
+    self->settings.app_volume_percent = (int)args_get_i64_by_key(self->args, NUM_ARGS, "-app-volume", 100);
 
     self->settings.keyint = args_get_double_by_key(self->args, NUM_ARGS, "-keyint", 2.0);
 
@@ -580,6 +585,10 @@ args_parse_result args_parser_parse(args_parser *self, int argc, char **argv, co
     self->args[arg_index++] = (Arg){ .key = "-low-power",                     .optional = true,  .list = false, .type = ARG_TYPE_BOOLEAN };
     self->args[arg_index++] = (Arg){ .key = "-exclude-metadata",              .optional = true,  .list = false, .type = ARG_TYPE_BOOLEAN };
     self->args[arg_index++] = (Arg){ .key = "-ipc",                           .optional = true,  .list = false, .type = ARG_TYPE_STRING  };
+    /* SourisGSR: volúmenes SOLO grabación 0-100 tipo OBS. No tocan el sistema. */
+    self->args[arg_index++] = (Arg){ .key = "-mic-volume",                    .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };
+    self->args[arg_index++] = (Arg){ .key = "-system-volume",                 .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };
+    self->args[arg_index++] = (Arg){ .key = "-app-volume",                    .optional = true,  .list = false, .type = ARG_TYPE_I64, .integer_value_min = 0, .integer_value_max = 100 };
     assert(arg_index == NUM_ARGS);
 
     for(int i = 1; i < argc; i += 2) {

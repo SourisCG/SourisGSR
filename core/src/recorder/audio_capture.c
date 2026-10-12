@@ -3,6 +3,7 @@
 #include "../../include/recorder/audio_codec.h"
 #include "../../include/utils.h"
 #include "../../include/log.h"
+#include "../../include/souris_gain.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -11,9 +12,41 @@
 
 #include <libavutil/opt.h>
 #include <libavutil/time.h>
+#include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
+
+/* SourisGSR: aplica gain SOLO grabación al AVFrame ya convertido.
+   Soporta S16/S32/FLT (intercalado) y FLTP (planar). 1.0 = no-op. */
+static void souris_apply_gain_to_frame(AVFrame *frame, AVCodecContext *cc, float gain) {
+    if(!frame || !cc || gain == 1.0f)
+        return;
+    const int nb_samples = frame->nb_samples;
+#if LIBAVUTIL_VERSION_MAJOR >= 59
+    const int nb_channels = cc->ch_layout.nb_channels;
+#else
+    const int nb_channels = cc->channels;
+#endif
+    if(nb_samples <= 0 || nb_channels <= 0)
+        return;
+    switch(cc->sample_fmt) {
+        case AV_SAMPLE_FMT_S16:
+            souris_gain_apply_s16((int16_t*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
+        case AV_SAMPLE_FMT_S32:
+            souris_gain_apply_s32((int32_t*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
+        case AV_SAMPLE_FMT_FLT:
+            souris_gain_apply_flt((float*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
+        case AV_SAMPLE_FMT_FLTP:
+            souris_gain_apply_fltp((float**)frame->data, nb_channels, nb_samples, gain);
+            break;
+        default:
+            break;
+    }
+}
 
 int gsr_audio_init_filter_graph(AVCodecContext *audio_codec_context, AVFilterGraph **graph, AVFilterContext **sink, AVFilterContext **src_filter_ctx, size_t num_sources) {
     char ch_layout[64];
@@ -290,6 +323,14 @@ static void* audio_device_thread(void *userdata) {
             else
                 device->frame->data[0] = (uint8_t*)sound_buffer;
 
+            /* SourisGSR: gain SOLO grabación. Si no hubo conversión (data
+               apunta al buffer del device) no podemos modificarlo in-place
+               de forma segura para todos los backends, así que solo se
+               aplica cuando el frame es nuestro (needs_audio_conversion).
+               En la práctica needs_audio_conversion=true siempre. */
+            if(needs_audio_conversion && device->volume_gain != 1.0f)
+                souris_apply_gain_to_frame(device->frame, track->codec_context, device->volume_gain);
+
             pthread_mutex_lock(&self->filter_mutex);
 
             if(track->graph) {
@@ -504,7 +545,7 @@ static int audio_track_alloc_devices(gsr_audio_track *self, size_t num_devices) 
     return GSR_ERROR_OK;
 }
 
-int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix) {
+int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix, int mic_volume_percent, int system_volume_percent, int app_volume_percent) {
     const int alloc_result = audio_track_alloc_devices(self, merged_audio_inputs->num_items);
     if(alloc_result != GSR_ERROR_OK)
         return alloc_result;
@@ -514,6 +555,12 @@ int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_a
         gsr_audio_device_capture *device = &self->audio_devices[i];
         device->audio_input = *audio_input;
         device->src_filter_ctx = use_amix ? src_filter_ctx[i] : NULL;
+        /* SourisGSR: gain efectivo ya resuelto aquí (per-input vol= o global). */
+        const bool is_app = audio_input->type == GSR_AUDIO_INPUT_TYPE_APPLICATION;
+        const bool is_mic = souris_device_name_is_mic(audio_input->name);
+        device->volume_gain = souris_resolve_gain(audio_input->has_custom_volume, audio_input->volume,
+                                                  is_app, is_mic,
+                                                  mic_volume_percent, system_volume_percent, app_volume_percent);
 
         if(audio_input->name[0] == '\0') {
             device->sound_device.handle = NULL;
@@ -539,12 +586,13 @@ int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_a
 }
 
 #ifdef GSR_APP_AUDIO
-int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio) {
+int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int app_volume_percent) {
     const int alloc_result = audio_track_alloc_devices(self, 1);
     if(alloc_result != GSR_ERROR_OK)
         return alloc_result;
 
     gsr_audio_device_capture *device = &self->audio_devices[0];
+    device->volume_gain = souris_volume_percent_to_gain(app_volume_percent);
     device->frame = create_audio_frame(audio_codec_context);
     if(!device->frame)
         return GSR_ERROR_GENERIC;
