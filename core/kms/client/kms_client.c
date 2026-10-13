@@ -332,7 +332,7 @@ int gsr_kms_client_init(gsr_kms_client *self, const char *card_path) {
         goto err;
     } else if(pid == 0) { /* child */
         if(inside_flatpak) {
-            const char *args[] = { "flatpak-spawn", "--host", "/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/bin/kms-server-proxy", self->initial_socket_path, card_path, home, NULL };
+            const char *args[] = { "flatpak-spawn", "--host", "/var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/bin/kms-server-proxy", self->initial_socket_path, card_path, home, NULL };
             execvp(args[0], (char *const*)args);
         } else if(has_perm) {
             const char *args[] = { server_filepath, self->initial_socket_path, card_path, NULL };

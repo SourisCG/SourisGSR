@@ -12,4 +12,4 @@ meson setup build
 meson configure --prefix=/usr --buildtype=release -Dsystemd=true -Dstrip=true build
 ninja -C build install
 
-echo "Successfully installed gpu-screen-recorder"
+echo "Successfully installed SourisGSR"

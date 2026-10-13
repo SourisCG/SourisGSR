@@ -48,8 +48,11 @@ namespace gsr {
         int32_t video_bitrate = 8000;
         bool change_video_resolution = false;
         std::vector<AudioTrack> audio_tracks_list;
-        // SourisGSR: recording-only volumes 0-100 (OBS style). Never touch
-        // the system mixer; passed to the CLI as -mic/-system/-app-volume.
+        // SourisGSR (deprecated): global recording-only volumes 0-100.
+        // The overlay UI is per-track-only now (each input row has its own
+        // 0-100 stored as |vol=NN|); these fields are only still parsed so
+        // old configs load, and are always reset to 100 on save. The engine
+        // keeps -mic/-system/-app-volume as CLI/SDK fallbacks.
         int32_t mic_volume = 100;
         int32_t system_volume = 100;
         int32_t app_volume = 100;
@@ -85,6 +88,8 @@ namespace gsr {
         bool software_encoding_warning_shown = false;
         bool wayland_warning_shown = false;
         bool exclude_metadata = false;
+        // SourisGSR: system tray icon integrated in sgsr-ui (never in the SDK).
+        bool show_tray_icon = true;
         std::string hotkeys_enable_option = "enable_hotkeys";
         std::string joystick_hotkeys_enable_option = "disable_hotkeys";
         std::string tint_color;

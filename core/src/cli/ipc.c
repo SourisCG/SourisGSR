@@ -392,6 +392,57 @@ static bool ipc_request_get_set_paused_state(const gsr_ipc_request *request, boo
     return false;
 }
 
+static bool json_value_to_volume(const sj_Value *value, int *out, char *error_message, size_t error_message_size) {
+    int64_t v = 0;
+    if(!gsr_json_number_to_int64(value, &v) || v < 0 || v > 100) {
+        snprintf(error_message, error_message_size, "expected volume 0-100");
+        return false;
+    }
+    *out = (int)v;
+    return true;
+}
+
+static bool ipc_request_get_set_volumes(const gsr_ipc_request *request, int *mic, int *system, int *app, char *error_message, size_t error_message_size) {
+    *mic = 100;
+    *system = 100;
+    *app = 100;
+    if(!request->has_data || request->data.type == SJ_NULL)
+        return true;
+    if(request->data.type != SJ_OBJECT) {
+        snprintf(error_message, error_message_size, "expected 'data' to be an object with mic/system/app 0-100");
+        return false;
+    }
+    sj_Reader reader = sj_reader(request->data.start, request->request_end - request->data.start);
+    const sj_Value data = sj_read(&reader);
+    sj_Value key;
+    sj_Value value;
+    bool has_any = false;
+    while(sj_iter_object(&reader, data, &key, &value)) {
+        if(gsr_json_string_equals(&key, "mic")) {
+            if(!json_value_to_volume(&value, mic, error_message, error_message_size))
+                return false;
+            has_any = true;
+        } else if(gsr_json_string_equals(&key, "system")) {
+            if(!json_value_to_volume(&value, system, error_message, error_message_size))
+                return false;
+            has_any = true;
+        } else if(gsr_json_string_equals(&key, "app")) {
+            if(!json_value_to_volume(&value, app, error_message, error_message_size))
+                return false;
+            has_any = true;
+        }
+    }
+    if(reader.error) {
+        snprintf(error_message, error_message_size, "failed to parse 'data': %s", reader.error);
+        return false;
+    }
+    if(!has_any) {
+        snprintf(error_message, error_message_size, "expected at least one of mic/system/app 0-100");
+        return false;
+    }
+    return true;
+}
+
 static bool ipc_request_name_to_deferred_request_type(const char *name, gsr_ipc_deferred_request_type *type) {
     if(strcmp(name, "stop") == 0) {
         *type = GSR_IPC_DEFERRED_REQUEST_STOP;
@@ -484,6 +535,15 @@ static bool ipc_handle_request(gsr_ipc *self, const gsr_ipc_request *request, ch
             return false;
 
         return self->handlers.save_replay(seconds, has_restart_replay, restart_replay, error_message, error_message_size, self->handlers.userdata);
+    }
+
+    if(strcmp(request->name, "set-volumes") == 0) {
+        int mic = 100, system = 100, app = 100;
+        if(!ipc_request_get_set_volumes(request, &mic, &system, &app, error_message, error_message_size))
+            return false;
+        if(!self->handlers.set_volumes)
+            return false;
+        return self->handlers.set_volumes(mic, system, app, error_message, error_message_size, self->handlers.userdata);
     }
 
     snprintf(error_message, error_message_size, "unknown request name '%s'", request->name);

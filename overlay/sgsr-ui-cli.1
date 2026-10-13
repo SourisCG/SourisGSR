@@ -1,14 +1,14 @@
-.\" Man page for gsr-ui-cli
-.TH GSR-UI-CLI 1 "2026-06-03" "gpu-screen-recorder-ui" "User Commands"
+.\" Man page for sgsr-ui-cli
+.TH GSR-UI-CLI 1 "2026-06-03" "sgsr-ui" "User Commands"
 .SH NAME
-gsr-ui-cli \- command-line interface for gsr-ui
+sgsr-ui-cli \- command-line interface for sgsr-ui
 .SH SYNOPSIS
-.B gsr-ui-cli
+.B sgsr-ui-cli
 .I command
 .SH DESCRIPTION
-.B gsr-ui-cli
+.B sgsr-ui-cli
 is the command-line application to control
-.B gsr-ui
+.B sgsr-ui
 without using \fBgsr-ui\fR's own hotkeys.
 .SH COMMANDS
 .TP
@@ -75,14 +75,17 @@ Take a screenshot of a window (or desktop portal on Wayland).
 .B reload-config
 Reloads the config.
 .TP
+.B quit
+Close the running sgsr-ui instance.
+.TP
 .B status
-Prints "running" and exits with 0 if gsr-ui is running, otherwise prints "not running" and exits with 1.
+Prints "running" and exits with 0 if sgsr-ui is running, otherwise prints "not running" and exits with 1.
 .SH EXAMPLES
 .TP
-.B gsr-ui-cli toggle-show
+.B sgsr-ui-cli toggle-show
 Show or hide the main window.
 .TP
-.B gsr-ui-cli toggle-record
+.B sgsr-ui-cli toggle-record
 Start or stop screen recording.
 .SH AUTHORS
 This manual page was written by the Debian team.
@@ -104,5 +107,5 @@ Project homepage
 GPU Screen Recorder homepage (CLI)
 .UE
 .br
-.BR gpu-screen-recorder (1),
-.BR gsr-ui (1)
+.BR sgsr (1),
+.BR sgsr-ui (1)

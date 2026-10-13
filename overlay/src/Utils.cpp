@@ -11,6 +11,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <filesystem>
 extern "C" {
 #include <mgl/system/clock.h>
 }
@@ -19,7 +20,7 @@ namespace gsr {
     static std::optional<std::string> get_xdg_autostart_content() {
         const char *args[] = {
             "/bin/sh", "-c",
-            "cat \"${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gpu-screen-recorder-ui.desktop\"",
+            "cat \"${XDG_CONFIG_HOME:-$HOME/.config}/autostart/sgsr-ui.desktop\"",
             nullptr
         };
         std::string output;
@@ -145,7 +146,24 @@ namespace gsr {
         } else {
             config_dir = get_home_dir() + "/.config";
         }
-        config_dir += "/gpu-screen-recorder";
+        config_dir += "/sourisgsr";
+        static bool migration_checked = false;
+        if(!migration_checked) {
+            migration_checked = true;
+            const std::filesystem::path new_path(config_dir);
+            const std::filesystem::path old_path(new_path.parent_path() / "gpu-screen-recorder");
+            std::error_code ec;
+            if(!std::filesystem::exists(new_path, ec) && std::filesystem::is_directory(old_path, ec)) {
+                std::filesystem::copy(old_path, new_path,
+                                      std::filesystem::copy_options::recursive, ec);
+                if(ec)
+                    fprintf(stderr, "Error: failed to migrate configuration from %s to %s: %s\n",
+                        old_path.c_str(), new_path.c_str(), ec.message().c_str());
+                else
+                    fprintf(stderr, "Info: migrated configuration from %s to %s\n",
+                        old_path.c_str(), new_path.c_str());
+            }
+        }
         return config_dir;
     }
 
@@ -323,8 +341,8 @@ namespace gsr {
 
         const bool is_flatpak = getenv("FLATPAK_ID") != nullptr;
         const char *exec_line = is_flatpak
-            ? "Exec=flatpak run com.dec05eba.gpu_screen_recorder gsr-ui"
-            : "Exec=gsr-ui launch-daemon";
+            ? "Exec=flatpak run com.sourisgsr.recorder sgsr-ui"
+            : "Exec=sgsr-ui launch-daemon";
 
         std::string content =
             "[Desktop Entry]\n"
@@ -332,13 +350,13 @@ namespace gsr {
             "Name=GPU Screen Recorder\n"
             "GenericName=Screen recorder\n"
             "Comment=A ShadowPlay-like screen recorder for Linux\n"
-            "Icon=gpu-screen-recorder\n" +
+            "Icon=sgsr\n" +
             std::string(exec_line) + "\n" +
             "Terminal=false\n" +
             "Hidden=" + (enable ? "false" : "true") + "\n";
 
         std::string shell_cmd =
-            "p=\"${XDG_CONFIG_HOME:-$HOME/.config}/autostart/gpu-screen-recorder-ui.desktop\" && "
+            "p=\"${XDG_CONFIG_HOME:-$HOME/.config}/autostart/sgsr-ui.desktop\" && "
             "mkdir -p \"$(dirname \"$p\")\" && "
             "printf '" + content + "' > \"$p\"";
 
@@ -361,8 +379,8 @@ namespace gsr {
     }
 
     bool wait_until_systemd_user_service_available() {
-        const char *args[] = { "systemctl", "--user", "-q", "is-enabled", "gpu-screen-recorder-ui.service", nullptr };
-        const char *flatpak_args[] = { "flatpak-spawn", "--host", "--", "systemctl", "--user", "-q", "is-enabled", "gpu-screen-recorder-ui.service", nullptr };
+        const char *args[] = { "systemctl", "--user", "-q", "is-enabled", "sourisgsr.service", nullptr };
+        const char *flatpak_args[] = { "flatpak-spawn", "--host", "--", "systemctl", "--user", "-q", "is-enabled", "sourisgsr.service", nullptr };
         const bool is_flatpak = getenv("FLATPAK_ID") != nullptr;
         return run_command_timeout(is_flatpak ? flatpak_args : args, 1.0, 5.0) >= 0;
     }

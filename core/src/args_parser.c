@@ -198,7 +198,7 @@ static double args_get_double_by_key(Arg *args, int num_args, const char *key, d
 
 static void usage_header(void) {
     const bool inside_flatpak = getenv("FLATPAK_ID") != NULL;
-    const char *program_name = inside_flatpak ? "flatpak run --command=gpu-screen-recorder com.dec05eba.gpu_screen_recorder" : "gpu-screen-recorder";
+    const char *program_name = inside_flatpak ? "flatpak run --command=sgsr com.sourisgsr.recorder" : "sgsr";
     printf("usage: %s -w <window_id|monitor|focused|portal|region|v4l2_device_path> [-c <container_format>] [-s WxH] [-region WxH+X+Y] [-f <fps>] [-a <audio_input>] "
            "[-q <quality>] [-r <replay_buffer_size_sec>] [-replay-storage ram|disk] [-restart-replay-on-save yes|no] "
            "[-k h264|hevc|av1|vp8|vp9|hevc_hdr|av1_hdr|hevc_10bit|av1_10bit] [-ac aac|opus|flac] [-ab <bitrate>] [-fm cfr|vfr|content] "
@@ -217,9 +217,9 @@ static void usage_full(void) {
     printf("\n");
     printf("NOTES:\n");
     if(inside_flatpak)
-        printf("  Run \"man /var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/share/man/man1/gpu-screen-recorder.1\" to open the man page for GPU Screen Recorder to see an explanation for each option and examples\n");
+        printf("  Run \"man /var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/share/man/man1/sgsr.1\" to open the man page for SourisGSR to see an explanation for each option and examples\n");
     else
-        printf("  Run \"man gpu-screen-recorder.1\" to open the man page for GPU Screen Recorder to see an explanation for each option and examples\n");
+        printf("  Run \"man sgsr.1\" to open the man page for SourisGSR to see an explanation for each option and examples\n");
     fflush(stdout);
 }
 

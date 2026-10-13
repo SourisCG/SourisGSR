@@ -26,7 +26,7 @@ exit
 
 ```
 # Conflict with other keyboard software
-Some keyboard remapping software such as keyd may conflict with gsr-global-hotkeys if configured incorrect (if it's configured to grab all devices, including gsr-ui virtual keyboard).
-If that happens it may grab gsr-ui-virtual keyboard while gsr-global-hotkeys will grab the keyboard remapping software virtual device, leading to a circular lock, making it not possible
-to use your keyboard. gsr-global-hotkeys detects this and outputs `gsr-ui-virtual-keyboard-grabbed` to stdout. You can listen to this and stop gsr-global-hotkeys or restart it with `--no-grab`
+Some keyboard remapping software such as keyd may conflict with gsr-global-hotkeys if configured incorrect (if it's configured to grab all devices, including sgsr-ui virtual keyboard).
+If that happens it may grab sgsr-ui-virtual keyboard while gsr-global-hotkeys will grab the keyboard remapping software virtual device, leading to a circular lock, making it not possible
+to use your keyboard. gsr-global-hotkeys detects this and outputs `sgsr-ui-virtual-keyboard-grabbed` to stdout. You can listen to this and stop gsr-global-hotkeys or restart it with `--no-grab`
 option to only listen to devices, not grabbing them.

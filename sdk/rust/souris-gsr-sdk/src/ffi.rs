@@ -33,6 +33,7 @@ pub enum RawSourceKind {
     Window = 1,
     Portal = 2,
     Region = 3,
+    Focused = 4,
 }
 
 #[repr(C)]
@@ -43,6 +44,8 @@ pub struct RawSource {
     pub title: [c_char; 256],
     pub width: c_int,
     pub height: c_int,
+    pub x: c_int,
+    pub y: c_int,
 }
 
 #[repr(C)]
@@ -92,6 +95,8 @@ pub struct RawConfig {
     pub app_volume_percent: c_int,
     pub replay_buffer_secs: c_int,
     pub record_cursor: c_int,
+    pub portal_session_token_path: *const c_char,
+    pub restore_portal_session: c_int,
     pub on_event: RawEventCb,
     pub event_userdata: *mut std::ffi::c_void,
 }
@@ -133,7 +138,7 @@ fn fixed_to_string(buf: &[c_char]) -> String {
     String::from_utf8_lossy(&bytes).into_owned()
 }
 
-/// C ABI version string, e.g. "0.2.0-souris".
+/// C ABI version string, e.g. "0.3.0-souris".
 pub fn version() -> String {
     cstr_to_string(unsafe { sgsr_version() })
 }
@@ -186,8 +191,8 @@ mod tests {
 
     #[test]
     fn abi_version_matches_header() {
-        assert_eq!(api_version(), 1);
-        assert!(version().starts_with("0.2"));
+        assert_eq!(api_version(), 2);
+        assert!(version().starts_with("0.3"));
     }
 
     #[test]
@@ -197,7 +202,9 @@ mod tests {
         assert!(audio.len() >= 2);
         assert_eq!(audio[0].0, "default_output");
         let video = list_video_sources().unwrap();
-        assert_eq!(video.len(), 2);
+        // Real monitors when a display is available, else stub screen+portal.
+        assert!(video.len() >= 2);
+        assert!(video.iter().any(|(_, _, k)| *k == RawSourceKind::Portal));
         unsafe { sgsr_shutdown() };
     }
 

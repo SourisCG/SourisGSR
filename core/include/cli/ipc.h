@@ -33,6 +33,8 @@ typedef struct {
         |restart_replay| overrides the -restart-replay-on-save option for this save when |has_restart_replay| is set.
     */
     bool (*save_replay)(int seconds, bool has_restart_replay, bool restart_replay, char *error_message, size_t error_message_size, void *userdata);
+    /* SourisGSR live recording-only volumes 0-100 (never the system mixer). */
+    bool (*set_volumes)(int mic_volume, int system_volume, int app_volume, char *error_message, size_t error_message_size, void *userdata);
     void *userdata;
 } gsr_ipc_handlers;
 

@@ -92,7 +92,7 @@ namespace gsr {
         if(!theme->close_texture.load_from_file((resources_path + "images/cross.png").c_str(), mgl::Texture::LoadOptions{false, false, MGL_TEXTURE_SCALE_LINEAR_MIPMAP}))
             goto error;
 
-        if(!theme->logo_texture.load_from_file((resources_path + "images/gpu_screen_recorder_logo.png").c_str()))
+        if(!theme->logo_texture.load_from_file((resources_path + "images/sourisgsr_logo.png").c_str()))
             goto error;
 
         if(!theme->checkbox_circle_texture.load_from_file((resources_path + "images/checkbox_circle.png").c_str(), mgl::Texture::LoadOptions{false, false, MGL_TEXTURE_SCALE_LINEAR_MIPMAP}))

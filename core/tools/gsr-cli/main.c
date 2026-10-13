@@ -51,6 +51,9 @@ static void usage(void) {
     printf("    saved when no number of seconds is given. Waits until the replay has been saved and prints\n");
     printf("    the path of the saved file. restart-replay overrides the -restart-replay-on-save option\n");
     printf("    of GPU Screen Recorder for this save.\n");
+    printf("  set-volumes <mic 0-100> <system 0-100> <app 0-100>\n");
+    printf("    Live update of recording-only volumes (never the system mixer). Example:\n");
+    printf("    gsr-cli -ipc \"$XDG_RUNTIME_DIR/gsr.sock\" set-volumes 80 100 90\n");
     printf("\n");
     printf("EXAMPLES:\n");
     printf("  gsr-cli -ipc \"$XDG_RUNTIME_DIR/gsr.sock\" status\n");
@@ -274,7 +277,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if(argc > 6) {
+    const char *early_command = argc >= 4 ? argv[3] : "";
+    const int max_args = (strcmp(early_command, "set-volumes") == 0) ? 7 : 6;
+    if(argc > max_args) {
         gsr_log(GSR_LOG_LEVEL_ERROR, "too many arguments");
         usage();
         return 1;
@@ -336,6 +341,25 @@ int main(int argc, char **argv) {
             return 1;
         }
         snprintf(request, sizeof(request), "{\"id\":%d,\"name\":\"set-paused\",\"data\":%s}\n", GSR_CLI_REQUEST_ID, command_argument);
+        return send_request(socket_filepath, request, GSR_CLI_REPLY_TIMEOUT_SECONDS);
+    }
+
+    if(strcmp(command, "set-volumes") == 0) {
+        /* set-volumes <mic> <system> <app>; allow partial via repeated parsing of argv[4..5] */
+        if(argc < 7) {
+            gsr_log(GSR_LOG_LEVEL_ERROR, "the 'set-volumes' command expects three 0-100 values: mic system app");
+            usage();
+            return 1;
+        }
+        int64_t mic = 0, system = 0, app = 0;
+        if(!string_to_int64(argv[4], &mic) || mic < 0 || mic > 100 ||
+           !string_to_int64(argv[5], &system) || system < 0 || system > 100 ||
+           !string_to_int64(argv[6], &app) || app < 0 || app > 100) {
+            gsr_log(GSR_LOG_LEVEL_ERROR, "the 'set-volumes' command expects three 0-100 values: mic system app");
+            return 1;
+        }
+        snprintf(request, sizeof(request), "{\"id\":%d,\"name\":\"set-volumes\",\"data\":{\"mic\":%" PRIi64 ",\"system\":%" PRIi64 ",\"app\":%" PRIi64 "}}\n",
+            GSR_CLI_REQUEST_ID, mic, system, app);
         return send_request(socket_filepath, request, GSR_CLI_REPLY_TIMEOUT_SECONDS);
     }
 

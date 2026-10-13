@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 #define PORTAL_CAPTURE_CANCELED_BY_USER_EXIT_CODE 60
 
@@ -91,14 +92,54 @@ static void gsr_capture_portal_create_input_textures(gsr_capture_portal *self) {
 }
 
 static void get_default_gpu_screen_recorder_restore_token_path(char *buffer, size_t buffer_size) {
+    static bool migrated = false;
     const char *xdg_config_home = getenv("XDG_CONFIG_HOME");
     if(xdg_config_home) {
-        snprintf(buffer, buffer_size, "%s/gpu-screen-recorder/restore_token", xdg_config_home);
+        snprintf(buffer, buffer_size, "%s/sourisgsr/restore_token", xdg_config_home);
     } else {
         const char *home = getenv("HOME");
         if(!home)
             home = "/tmp";
-        snprintf(buffer, buffer_size, "%s/.config/gpu-screen-recorder/restore_token", home);
+        snprintf(buffer, buffer_size, "%s/.config/sourisgsr/restore_token", home);
+    }
+
+    if(!migrated) {
+        migrated = true;
+        char legacy_path[PATH_MAX];
+        const char *xdg = xdg_config_home;
+        if(xdg)
+            snprintf(legacy_path, sizeof(legacy_path), "%s/gpu-screen-recorder/restore_token", xdg);
+        else {
+            const char *home = getenv("HOME");
+            if(!home)
+                home = "/tmp";
+            snprintf(legacy_path, sizeof(legacy_path), "%s/.config/gpu-screen-recorder/restore_token", home);
+        }
+
+        if(access(buffer, F_OK) != 0 && access(legacy_path, R_OK) == 0) {
+            char config_dir[PATH_MAX];
+            snprintf(config_dir, sizeof(config_dir), "%s", buffer);
+            char *last_slash = strrchr(config_dir, '/');
+            if(last_slash) {
+                *last_slash = '\0';
+                mkdir(config_dir, 0700);
+            }
+            FILE *source = fopen(legacy_path, "rb");
+            FILE *destination = fopen(buffer, "wb");
+            if(source && destination) {
+                char copy_buffer[4096];
+                size_t bytes_read;
+                while((bytes_read = fread(copy_buffer, 1, sizeof(copy_buffer), source)) > 0)
+                    fwrite(copy_buffer, 1, bytes_read, destination);
+                fprintf(stderr, "Info: migrated portal restore token to %s\n", buffer);
+            } else {
+                gsr_log(GSR_LOG_LEVEL_WARNING, "failed to migrate portal restore token from %s", legacy_path);
+            }
+            if(source)
+                fclose(source);
+            if(destination)
+                fclose(destination);
+        }
     }
 }
 

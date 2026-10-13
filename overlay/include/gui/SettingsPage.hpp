@@ -95,8 +95,6 @@ namespace gsr {
         std::unique_ptr<List> create_audio_track_custom_name_input();
         std::unique_ptr<List> create_audio_track_section_list();
         std::unique_ptr<Widget> create_audio_section();
-        std::unique_ptr<List> create_audio_volume_entry(const char *label, Entry **out_entry);
-        std::unique_ptr<List> create_audio_volumes();
         std::unique_ptr<List> create_video_quality_box();
         std::unique_ptr<List> create_video_bitrate_entry();
         std::unique_ptr<List> create_video_bitrate();
@@ -198,9 +196,7 @@ namespace gsr {
         Entry *video_height_entry_ptr = nullptr;
         Entry *framerate_entry_ptr = nullptr;
         Entry *video_bitrate_entry_ptr = nullptr;
-        Entry *mic_volume_entry_ptr = nullptr;
-        Entry *system_volume_entry_ptr = nullptr;
-        Entry *app_volume_entry_ptr = nullptr;        List *video_bitrate_list_ptr = nullptr;
+        List *video_bitrate_list_ptr = nullptr;
         CheckBox *change_video_resolution_checkbox_ptr = nullptr;
         ComboBox *color_range_box_ptr = nullptr;
         ComboBox *video_quality_box_ptr = nullptr;

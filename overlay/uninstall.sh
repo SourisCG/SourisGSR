@@ -7,4 +7,4 @@ cd "$script_dir"
 
 ninja -C build uninstall
 
-echo "Successfully uninstalled gsr-ui"
+echo "Successfully uninstalled sgsr-ui"

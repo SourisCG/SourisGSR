@@ -8,6 +8,8 @@
 //! typechecks (no linking).
 
 fn main() {
+    println!("cargo::rerun-if-env-changed=SOURIS_GSR_LIB_DIR");
+    println!("cargo::rerun-if-env-changed=SOURIS_GSR_PKG_CONFIG_PATH");
     if std::env::var("CARGO_FEATURE_FFI").is_err() {
         return;
     }
@@ -15,6 +17,7 @@ fn main() {
         return;
     }
     let dir = std::env::var("SOURIS_GSR_LIB_DIR").unwrap();
+    println!("cargo::rerun-if-changed={dir}/libsouris_gsr.a");
     println!("cargo::rustc-link-search=native={dir}");
     println!("cargo::rustc-link-lib=static=souris_gsr");
 

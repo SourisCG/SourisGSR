@@ -273,7 +273,7 @@ namespace gsr {
         int query_event = 0;
         int query_error = 0;
         if(!XQueryExtension(dpy, "XInputExtension", xi_opcode, &query_event, &query_error)) {
-            fprintf(stderr, "gsr-ui error: X Input extension not available\n");
+            fprintf(stderr, "sgsr-ui error: X Input extension not available\n");
             return false;
         }
 
@@ -281,7 +281,7 @@ namespace gsr {
         int minor = 1;
         int retval = XIQueryVersion(dpy, &major, &minor);
         if (retval != Success) {
-            fprintf(stderr, "gsr-ui error: XInput 2.1 is not supported\n");
+            fprintf(stderr, "sgsr-ui error: XInput 2.1 is not supported\n");
             return false;
         }
 
@@ -506,7 +506,7 @@ namespace gsr {
         }
     }
 
-    static const char *flatpak_gsr_game_tracker_path = "/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/bin/gsr-game-tracker";
+        static const char *flatpak_gsr_game_tracker_path = "/var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/bin/sgsr-game-tracker";
 
     static pid_t launch_gsr_game_tracker(int *stdout_fd) {
         const bool is_flatpak = getenv("FLATPAK_ID") != nullptr;
@@ -514,7 +514,7 @@ namespace gsr {
             const char *args[] = { "flatpak-spawn", "--host", "--", flatpak_gsr_game_tracker_path, NULL };
             return exec_program(args, stdout_fd, false);
         } else {
-            const char *args[] = { "gsr-game-tracker", NULL };
+            const char *args[] = { "sgsr-game-tracker", NULL };
             return exec_program(args, stdout_fd, false);
         }
     }
@@ -543,7 +543,7 @@ namespace gsr {
         // wayland_dpy is borrowed from main(); never disconnected here.
         this->wayland_dpy = wayland_dpy;
 
-        gsr_icon_path = this->resources_path + "images/gpu_screen_recorder_logo.png";
+        gsr_icon_path = this->resources_path + "images/sourisgsr_logo.png";
 
         key_bindings[0].key_event.code = mgl::Keyboard::Escape;
         key_bindings[0].key_event.key_states.alt = false;
@@ -654,7 +654,7 @@ namespace gsr {
             if(gsr_game_tracker_process_output_file)
                 gsr_game_tracker_process_output_fd = -1;
         } else {
-            fprintf(stderr, "Warning: failed to launch gsr-game-tracker. The feature to start replay when a game starts will not work\n");
+            fprintf(stderr, "Warning: failed to launch sgsr-game-tracker. The feature to start replay when a game starts will not work\n");
         }
     }
 
@@ -718,7 +718,7 @@ namespace gsr {
     void Overlay::xi_setup() {
         xi_display = XOpenDisplay(nullptr);
         if(!xi_display) {
-            fprintf(stderr, "gsr-ui error: failed to setup XI connection\n");
+            fprintf(stderr, "sgsr-ui error: failed to setup XI connection\n");
             return;
         }
 
@@ -727,11 +727,11 @@ namespace gsr {
 
         xi_input_xev = (XEvent*)calloc(1, sizeof(XEvent));
         if(!xi_input_xev)
-            throw std::runtime_error("gsr-ui error: failed to allocate XEvent data");
+            throw std::runtime_error("sgsr-ui error: failed to allocate XEvent data");
 
         xi_output_xev = (XEvent*)calloc(1, sizeof(XEvent));
         if(!xi_output_xev)
-            throw std::runtime_error("gsr-ui error: failed to allocate XEvent data");
+            throw std::runtime_error("sgsr-ui error: failed to allocate XEvent data");
 
         unsigned char mask[XIMaskLen(XI_LASTEVENT)];
         memset(mask, 0, sizeof(mask));
@@ -747,7 +747,7 @@ namespace gsr {
         xi_masks.mask_len = sizeof(mask);
         xi_masks.mask = mask;
         if(XISelectEvents(xi_display, DefaultRootWindow(xi_display), &xi_masks, 1) != Success) {
-            fprintf(stderr, "gsr-ui error: XISelectEvents failed\n");
+            fprintf(stderr, "sgsr-ui error: XISelectEvents failed\n");
             goto error;
         }
 
@@ -1307,7 +1307,7 @@ namespace gsr {
             window_create_params.graphics_api = MGL_GRAPHICS_API_EGL;
         else
             window_create_params.graphics_api = gsr_info.system_info.display_server == DisplayServer::WAYLAND ? MGL_GRAPHICS_API_GLX : MGL_GRAPHICS_API_EGL;
-        window_create_params.class_name = "gsr-ui";
+        window_create_params.class_name = "sgsr-ui";
 
         if(!window->create("gsr ui", window_create_params)) {
             fprintf(stderr, "error: failed to create window\n");
@@ -1708,7 +1708,7 @@ namespace gsr {
 
             if(exit_status == 67) {
                 const bool is_flatpak = getenv("FLATPAK_ID") != nullptr;
-                const char *startup_command = is_flatpak ? "flatpak run com.dec05eba.gpu_screen_recorder gsr-ui" : "gsr-ui launch-daemon";
+                const char *startup_command = is_flatpak ? "flatpak run com.sourisgsr.recorder sgsr-ui" : "sgsr-ui launch-daemon";
                 show_notification(
                     TRF("To enable autorun: install and configure 'dex' (recommended), or manually add '%s' to your desktop autostart entries.", startup_command).c_str(),
                     10.0,
@@ -2390,7 +2390,7 @@ namespace gsr {
     // This is checked by gsr-game-tracker on the host, since the process ids are host process ids
     static bool is_game_process_tree_pid(pid_t pid) {
         const std::string pid_str = std::to_string(pid);
-        const char *args[] = { "gsr-game-tracker", "--check-pid", pid_str.c_str(), NULL };
+        const char *args[] = { "sgsr-game-tracker", "--check-pid", pid_str.c_str(), NULL };
         std::string output;
         return exec_program_on_host_get_stdout(args, output) == 0;
     }
@@ -2623,7 +2623,7 @@ namespace gsr {
     }
 
     void Overlay::on_gsr_process_error(int exit_code, NotificationType notification_type) {
-        fprintf(stderr, "Warning: gpu-screen-recorder (%d) exited with exit status %d\n", (int)gpu_screen_recorder_process, exit_code);
+        fprintf(stderr, "Warning: sgsr (%d) exited with exit status %d\n", (int)gpu_screen_recorder_process, exit_code);
         if(exit_code == 50) {
             show_notification(TR("Desktop portal capture failed. Either you canceled the desktop portal or your Wayland compositor doesn't support desktop portal capture or it's incorrectly setup on your system."), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), notification_type, nullptr, NotificationLevel::ERROR);
         } else if(exit_code == 51) {
@@ -2761,7 +2761,7 @@ namespace gsr {
                 exec_program_on_host_daemonized(args);
             }
         } else {
-            fprintf(stderr, "Warning: gpu-screen-recorder (%d) exited with exit status %d\n", (int)gpu_screen_recorder_screenshot_process, exit_code);
+            fprintf(stderr, "Warning: sgsr (%d) exited with exit status %d\n", (int)gpu_screen_recorder_screenshot_process, exit_code);
             show_notification(TR("Failed to take a screenshot. Verify if settings are correct"), notification_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::SCREENSHOT, nullptr, NotificationLevel::ERROR);
         }
 
@@ -2987,8 +2987,11 @@ namespace gsr {
             for(const std::string &audio_input_name : audio_track.audio_inputs) {
                 std::string new_audio_input_name = audio_input_name;
                 const bool is_app_audio = starts_with(new_audio_input_name, "app:");
-                if(is_app_audio && !gsr_info.system_info.supports_app_audio)
-                    continue;
+                if(is_app_audio && !gsr_info.system_info.supports_app_audio) {
+                    // No silent drop: warn loudly. The CLI will fail fast on
+                    // app: without PipeWire instead of recording wrong audio.
+                    fprintf(stderr, "Warning: application audio '%s' requires PipeWire (supports_app_audio=no), keeping it so recording fails fast instead of silently dropping it\n", new_audio_input_name.c_str());
+                }
 
                 if(is_app_audio && audio_track.application_audio_invert)
                     new_audio_input_name.replace(0, 4, "app-inverse:");
@@ -3061,28 +3064,10 @@ namespace gsr {
             args.push_back(audio_track.c_str());
         }
 
-        // SourisGSR: recording-only volumes (OBS style). Only passed when
-        // changed so the overlay stays compatible with older CLI builds.
-        // Note: thread_local storage keeps the c_str() pointers valid until
-        // the next call on this (UI) thread; args are consumed synchronously.
-        static thread_local std::string souris_mic_volume_str;
-        static thread_local std::string souris_system_volume_str;
-        static thread_local std::string souris_app_volume_str;
-        if(record_options.mic_volume != 100) {
-            souris_mic_volume_str = std::to_string(record_options.mic_volume);
-            args.push_back("-mic-volume");
-            args.push_back(souris_mic_volume_str.c_str());
-        }
-        if(record_options.system_volume != 100) {
-            souris_system_volume_str = std::to_string(record_options.system_volume);
-            args.push_back("-system-volume");
-            args.push_back(souris_system_volume_str.c_str());
-        }
-        if(record_options.app_volume != 100) {
-            souris_app_volume_str = std::to_string(record_options.app_volume);
-            args.push_back("-app-volume");
-            args.push_back(souris_app_volume_str.c_str());
-        }
+        // SourisGSR per-track-only volumes: each -a track already carries
+        // its own |vol=NN| suffixes from the audio rows. Global
+        // -mic/-system/-app-volume flags are deprecated and never emitted
+        // by the overlay (the engine keeps them as CLI/SDK fallbacks).
 
         if(record_options.restore_portal_session && force_type != RecordForceType::WINDOW) {
             args.push_back("-restore-portal-session");
@@ -3224,7 +3209,7 @@ namespace gsr {
     }
 
     static const char* change_container_if_codec_not_supported(const char *video_codec, const char *container) {
-        // gpu-screen-recorder falls back to a whip (webrtc) compatible video codec automatically
+        // sgsr falls back to a whip (webrtc) compatible video codec automatically
         if(strcmp(container, "whip") == 0)
             return container;
 
@@ -3427,7 +3412,7 @@ namespace gsr {
         const std::string capture_source_arg = compose_capture_source_arg(recording_capture_target, config.replay_config.record_options);
 
         std::vector<const char*> args = {
-            "gpu-screen-recorder", "-w", capture_source_arg.c_str(),
+            "sgsr", "-w", capture_source_arg.c_str(),
             "-c", container,
             "-ac", config.replay_config.record_options.audio_codec.c_str(),
             "-cursor", config.replay_config.record_options.record_cursor ? "yes" : "no",
@@ -3465,7 +3450,7 @@ namespace gsr {
 
         gpu_screen_recorder_process = exec_program(args.data(), &gpu_screen_recorder_process_output_fd);
         if(gpu_screen_recorder_process == -1) {
-            show_notification(TR("Failed to launch gpu-screen-recorder to start replay"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::REPLAY, nullptr, NotificationLevel::ERROR);
+            show_notification(TR("Failed to launch sgsr to start replay"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::REPLAY, nullptr, NotificationLevel::ERROR);
             return false;
         } else {
             recording_status = RecordingStatus::REPLAY;
@@ -3648,7 +3633,7 @@ namespace gsr {
         const std::string capture_source_arg = compose_capture_source_arg(recording_capture_target, config.record_config.record_options);
 
         std::vector<const char*> args = {
-            "gpu-screen-recorder", "-w", capture_source_arg.c_str(),
+            "sgsr", "-w", capture_source_arg.c_str(),
             "-c", container,
             "-ac", config.record_config.record_options.audio_codec.c_str(),
             "-cursor", config.record_config.record_options.record_cursor ? "yes" : "no",
@@ -3662,7 +3647,7 @@ namespace gsr {
             "-o", output_file.c_str()
         };
 
-        const std::string hotkey_window_capture_portal_session_token_filepath = get_config_dir() + "/gsr-ui-window-capture-token";
+        const std::string hotkey_window_capture_portal_session_token_filepath = get_config_dir() + "/sgsr-ui-window-capture-token";
         if(record_area_option == "portal") {
             hide_ui = true;
             if(force_type == RecordForceType::WINDOW) {
@@ -3681,7 +3666,7 @@ namespace gsr {
         record_filepath = output_file;
         gpu_screen_recorder_process = exec_program(args.data(), &gpu_screen_recorder_process_output_fd);
         if(gpu_screen_recorder_process == -1) {
-            show_notification(TR("Failed to launch gpu-screen-recorder to start recording"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::RECORD, nullptr, NotificationLevel::ERROR);
+            show_notification(TR("Failed to launch sgsr to start recording"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::RECORD, nullptr, NotificationLevel::ERROR);
             return;
         } else {
             recording_status = RecordingStatus::RECORD;
@@ -3924,7 +3909,7 @@ namespace gsr {
         const std::string capture_source_arg = compose_capture_source_arg(recording_capture_target, config.streaming_config.record_options);
 
         std::vector<const char*> args = {
-            "gpu-screen-recorder", "-w", capture_source_arg.c_str(),
+            "sgsr", "-w", capture_source_arg.c_str(),
             "-c", container,
             "-ac", audio_codec,
             "-cursor", config.streaming_config.record_options.record_cursor ? "yes" : "no",
@@ -3948,7 +3933,7 @@ namespace gsr {
 
         current_recording_config = config;
 
-        // The bearer token is passed to gpu-screen-recorder in an environment variable instead of as a command line argument
+        // The bearer token is passed to sgsr in an environment variable instead of as a command line argument
         // to make sure the token isn't visible to other processes in the process list.
         // It's set before exec_program so the child inherits it and it's removed from this process again right after
         const bool pass_whip_token = config.streaming_config.streaming_service == "whip" && !config.streaming_config.whip.bearer_token.empty();
@@ -3961,7 +3946,7 @@ namespace gsr {
             unsetenv("GSR_AUTH");
 
         if(gpu_screen_recorder_process == -1) {
-            show_notification(TR("Failed to launch gpu-screen-recorder to start streaming"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::STREAM, nullptr, NotificationLevel::ERROR);
+            show_notification(TR("Failed to launch sgsr to start streaming"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::STREAM, nullptr, NotificationLevel::ERROR);
             return;
         } else {
             recording_status = RecordingStatus::STREAM;
@@ -4049,7 +4034,7 @@ namespace gsr {
         const bool capture_cursor = force_type == ScreenshotForceType::NONE && config.screenshot_config.record_cursor;
 
         std::vector<const char*> args = {
-            "gpu-screen-recorder", "-w", screenshot_capture_target.c_str(),
+            "sgsr", "-w", screenshot_capture_target.c_str(),
             "-cursor", capture_cursor ? "yes" : "no",
             "-v", "no",
             "-q", config.screenshot_config.image_quality.c_str(),
@@ -4069,7 +4054,7 @@ namespace gsr {
             args.push_back("yes");
         }
 
-        const std::string hotkey_window_capture_portal_session_token_filepath = get_config_dir() + "/gsr-ui-window-capture-token";
+        const std::string hotkey_window_capture_portal_session_token_filepath = get_config_dir() + "/sgsr-ui-window-capture-token";
         if(record_area_option == "portal") {
             hide_ui = true;
             if(force_type == ScreenshotForceType::WINDOW) {
@@ -4090,7 +4075,7 @@ namespace gsr {
         screenshot_filepath = output_file;
         gpu_screen_recorder_screenshot_process = exec_program(args.data(), nullptr);
         if(gpu_screen_recorder_screenshot_process == -1) {
-            show_notification(TR("Failed to launch gpu-screen-recorder to take a screenshot"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::SCREENSHOT, nullptr, NotificationLevel::ERROR);
+            show_notification(TR("Failed to launch sgsr to take a screenshot"), notification_error_timeout_seconds, mgl::Color(255, 0, 0), mgl::Color(255, 0, 0), NotificationType::SCREENSHOT, nullptr, NotificationLevel::ERROR);
         }
     }
 

@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define SGSR_API_VERSION 1
+#define SGSR_API_VERSION 2
 
 typedef struct sgsr_recorder sgsr_recorder;
 
@@ -32,15 +32,19 @@ typedef enum {
     SGSR_SOURCE_MONITOR = 0,
     SGSR_SOURCE_WINDOW = 1,   /* individual window: portal (Wayland) / HWND (WGC on Win) */
     SGSR_SOURCE_PORTAL = 2,   /* compositor picker (Wayland) */
-    SGSR_SOURCE_REGION = 3,
+    SGSR_SOURCE_REGION = 3,   /* x,y,w,h in display-server coordinates */
+    SGSR_SOURCE_FOCUSED = 4,  /* CLI -w focused (X11; Wayland falls back to portal) */
 } sgsr_source_kind;
 
 typedef struct {
     sgsr_source_kind kind;
-    char id[256];    /* monitor index / window id (X11) / HWND (Win) / portal token */
+    char id[256];    /* monitor name / window id (X11) / HWND (Win) / portal token.
+                        REGION: ignored, geometry comes from x,y,width,height. */
     char title[256]; /* window/monitor title for pickers */
     int width;
     int height;
+    int x;           /* REGION origin (display-server coords). v2+. */
+    int y;           /* REGION origin (display-server coords). v2+. */
 } sgsr_source;
 
 typedef struct {
@@ -77,14 +81,18 @@ typedef struct {
     const char *video_codec; /* "auto","h264","hevc","av1" */
     const char *container;   /* "mp4","mkv","mov" */
     const char *output_path; /* or rtmp/srt URL for streaming */
-    const char *audio_inputs[8]; /* same ids as CLI -a */
+    const char *audio_inputs[8]; /* same ids as CLI -a, vol=NN supported, e.g. "default_output|vol=80" */
     int num_audio_inputs;
-    /* Recording-only volumes 0-100, OBS style. Never touch the system. */
+    /* Recording-only volumes 0-100, OBS style. Never touch the system.
+       start() rejects <0/>100 with INVALID_ARG; hot set_volumes() clamps. */
     int mic_volume_percent;
     int system_volume_percent;
     int app_volume_percent;
     int replay_buffer_secs;  /* 0 = normal recording */
     int record_cursor;       /* 1 yes, 0 no */
+    /* v2+: portal session persistence (Wayland). NULL/0 = no restore. */
+    const char *portal_session_token_path;
+    int restore_portal_session; /* 1 = pass -restore-portal-session to portal capture */
     sgsr_event_cb on_event;
     void *event_userdata;
 } sgsr_config;

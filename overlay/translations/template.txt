@@ -101,10 +101,10 @@ Stopped capture because the user canceled the desktop portal=
 Failed to take a screenshot. Verify if settings are correct=
 
 # Launch errors
-Failed to launch gpu-screen-recorder to start replay=
-Failed to launch gpu-screen-recorder to start recording=
-Failed to launch gpu-screen-recorder to start streaming=
-Failed to launch gpu-screen-recorder to take a screenshot=
+Failed to launch sgsr to start replay=
+Failed to launch sgsr to start recording=
+Failed to launch sgsr to start streaming=
+Failed to launch sgsr to take a screenshot=
 
 # System startup notifications
 Failed to add GPU Screen Recorder to system startup=

@@ -5,23 +5,23 @@ A fullscreen overlay UI for [GPU Screen Recorder](https://git.dec05eba.com/gpu-s
 The application is currently primarly designed for X11 but it can run on Wayland as well through XWayland on some platforms and native Wayland on others, with some caveats because of Wayland limitations.
 
 # Installation
-If you are running an Arch Linux based distro then you can find gpu screen recorder ui in the official repositories under the name gpu-screen-recorder-ui (`sudo pacman -S gpu-screen-recorder-ui`).\
+If you are running an Arch Linux based distro then you can find gpu screen recorder ui in the official repositories under the name sgsr-ui (`sudo pacman -S sgsr-ui`).\
 If you are running another distro then you can run `sudo ./install.sh`, but you need to manually install the dependencies, as described below.\
 You can also install gpu screen recorder from [flathub](https://flathub.org/apps/details/com.dec05eba.gpu_screen_recorder) which includes this UI.
 
 Note that the program (or more specifically `gsr-global-hotkeys`) has to be installed to a location that is mounted without `nosuid`.
 
 # Usage
-Start the program by running `gsr-ui` or clicking on `GPU Screen Recorder` on your desktop or in your application launcher.
+Start the program by running `sgsr-ui` or clicking on `GPU Screen Recorder` on your desktop or in your application launcher.
 Press `Left Alt+Z` to show/hide the UI. Go into the settings (the icon on the right) to view all of the different hotkeys configured.
 
 If you want the program to start on system startup and have it running in the background where it can be controlled with the hotkeys at any time
 then open the UI and go into the settings (the icon on the right) and enable "Start program on system startup?".
-The application will be added to `~/.config/autostart/gpu-screen-recorder-ui.desktop`. This will be launched automatically when you use a desktop environment,
+The application will be added to `~/.config/autostart/sgsr-ui.desktop`. This will be launched automatically when you use a desktop environment,
 but if you use a minimal window manager then you need to use a XDG autostart program such as `dex` (for example run `dex -a -s ~/.config/autostart` at startup),
 or launch the program manually from your window manager startup script.
 
-A program called `gsr-ui-cli` is also installed when installing this software. This can be used to remotely control the UI. Run `gsr-ui-cli --help` to list the available commands.
+A program called `sgsr-ui-cli` is also installed when installing this software. This can be used to remotely control the UI. Run `sgsr-ui-cli --help` to list the available commands.
 
 # Dependencies
 GPU Screen Recorder UI uses meson build system so you need to install `meson` to build GPU Screen Recorder UI.
@@ -50,14 +50,14 @@ There are also additional dependencies needed at runtime:
 GPU Screen Recorder UI uses its own translation system for it. See the `translations/template.txt` file for the translation template.
 Each translation is in its own file based on the locale name, such as `translations/ja.txt` for the japanese translation.
 
-You can translate the program without building it from source code by copying the translation file to `/usr/share/gsr-ui/translations/` folder (if installed as a system package) or to `/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/share/gsr-ui/translations/` (if installed as a flatpak).
+You can translate the program without building it from source code by copying the translation file to `/usr/share/sgsr-ui/translations/` folder (if installed as a system package) or to `/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/share/sgsr-ui/translations/` (if installed as a flatpak).
 
-You can test the translation by using the `LANG` environment variable, for example `LANG=ja gsr-ui`.
+You can test the translation by using the `LANG` environment variable, for example `LANG=ja sgsr-ui`.
 
 ## Program behavior notes
-By default this program has to grab all keyboards and creates a virtual keyboard (`gsr-ui virtual keyboard`) to make global hotkeys work on all Wayland compositors.\
+By default this program has to grab all keyboards and creates a virtual keyboard (`sgsr-ui virtual keyboard`) to make global hotkeys work on all Wayland compositors.\
 This might cause issues for you if you use keyboard remapping software. To workaround this you can go into settings and select "Yes, but only grab virtual devices" or "Yes, but don't grab devices".\
-If you use keyboard remapping software such as keyd then make sure to make it ignore "gsr-ui virtual keyboard" (dec0:5eba device id), otherwise your keyboard can get locked
+If you use keyboard remapping software such as keyd then make sure to make it ignore "sgsr-ui virtual keyboard" (dec0:5eba device id), otherwise your keyboard can get locked
 as gpu screen recorder tries to grab keys and keyd grabs gpu screen recorder, leading to a lock.\
 If you are stuck in such a lock where you cant press and keyboard keys you can press (left) ctrl+shift+alt+esc to close gpu screen recorder and remove it from system startup.
 

@@ -79,32 +79,36 @@ overrides the
 .B \-restart\-replay\-on\-save
 option of GPU Screen Recorder for this save, which clears the replay buffer after the whole replay
 buffer has been saved.
+.TP
+.BR set-volumes " <mic 0-100> <system 0-100> <app 0-100>"
+Live update of recording-only volumes (never the system mixer). Example:
+.B "sgsr-cli -ipc \"$XDG_RUNTIME_DIR/gsr.sock\" set-volumes 80 100 90".
 .SH EXAMPLES
 Start GPU Screen Recorder in replay mode with an ipc socket:
 .RS
 .nf
-gpu-screen-recorder -w screen -f 60 -c mp4 -r 60 -o ~/Videos -ipc "$XDG_RUNTIME_DIR/gsr.sock" &
+sgsr -w screen -f 60 -c mp4 -r 60 -o ~/Videos -ipc "$XDG_RUNTIME_DIR/gsr.sock" &
 .fi
 .RE
 .PP
 Save the last 30 seconds:
 .RS
 .nf
-gsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" save-replay 30
+sgsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" save-replay 30
 .fi
 .RE
 .PP
 Save the whole replay buffer and clear it:
 .RS
 .nf
-gsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" save-replay restart-replay=true
+sgsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" save-replay restart-replay=true
 .fi
 .RE
 .PP
 Start replay only when it isn't already running:
 .RS
 .nf
-gsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" status >/dev/null || start-replay.sh
+sgsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" status >/dev/null || start-replay.sh
 .fi
 .RE
 .SH NOTES

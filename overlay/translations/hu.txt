@@ -96,10 +96,10 @@ Stopped capture because the user canceled the desktop portal=A rögzítés leál
 Failed to take a screenshot. Verify if settings are correct=Nem sikerült a képernyőkép elkészítése. Ellenőrizd a beállításokat
 
 # Launch errors
-Failed to launch gpu-screen-recorder to start replay=Nem sikerült elindítani a gpu-screen-recorder-t a visszajátszáshoz
-Failed to launch gpu-screen-recorder to start recording=Nem sikerült elindítani a gpu-screen-recorder-t a felvételhez
-Failed to launch gpu-screen-recorder to start streaming=Nem sikerült elindítani a gpu-screen-recorder-t a közvetítéshez
-Failed to launch gpu-screen-recorder to take a screenshot=Nem sikerült elindítani a gpu-screen-recorder-t képernyőképhez
+Failed to launch sgsr to start replay=Nem sikerült elindítani a sgsr-t a visszajátszáshoz
+Failed to launch sgsr to start recording=Nem sikerült elindítani a sgsr-t a felvételhez
+Failed to launch sgsr to start streaming=Nem sikerült elindítani a sgsr-t a közvetítéshez
+Failed to launch sgsr to take a screenshot=Nem sikerült elindítani a sgsr-t képernyőképhez
 
 # System startup notifications
 Failed to add GPU Screen Recorder to system startup=Nem sikerült hozzáadni a GPU Screen Recordert az automatikus indításhoz

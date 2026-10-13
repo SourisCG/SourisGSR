@@ -96,10 +96,10 @@ Stopped capture because the user canceled the desktop portal=Capture arrêtée c
 Failed to take a screenshot. Verify if settings are correct=Échec de la capture d’écran. Vérifiez les paramètres.
 
 # Launch errors
-Failed to launch gpu-screen-recorder to start replay=Échec du lancement de gpu-screen-recorder pour démarrer le replay
-Failed to launch gpu-screen-recorder to start recording=Échec du lancement de gpu-screen-recorder pour démarrer l’enregistrement
-Failed to launch gpu-screen-recorder to start streaming=Échec du lancement de gpu-screen-recorder pour démarrer la diffusion
-Failed to launch gpu-screen-recorder to take a screenshot=Échec du lancement de gpu-screen-recorder pour capturer l’écran
+Failed to launch sgsr to start replay=Échec du lancement de sgsr pour démarrer le replay
+Failed to launch sgsr to start recording=Échec du lancement de sgsr pour démarrer l’enregistrement
+Failed to launch sgsr to start streaming=Échec du lancement de sgsr pour démarrer la diffusion
+Failed to launch sgsr to take a screenshot=Échec du lancement de sgsr pour capturer l’écran
 
 # System startup notifications
 Failed to add GPU Screen Recorder to system startup=Échec de l’ajout de GPU Screen Recorder au démarrage du système

@@ -1,4 +1,4 @@
-project('gpu-screen-recorder', 'c', 'cpp', version : '6.1.4', default_options : ['c_std=gnu11', 'cpp_std=c++17', 'warning_level=2'])
+project('sourisgsr', 'c', 'cpp', version : '6.1.4', default_options : ['c_std=gnu11', 'cpp_std=c++17', 'warning_level=2'])
 
 is_windows = build_machine.system() == 'windows'
 is_linux = build_machine.system() == 'linux'
@@ -14,7 +14,7 @@ if is_windows
     add_project_arguments('-DSOURIS_WINDOWS', language : ['c', 'cpp'])
 endif
 
-src = [
+src_lib = [
     'src/capture/capture.c',
     'src/encoder/encoder.c',
     'src/encoder/video/video.c',
@@ -66,11 +66,14 @@ src = [
     'src/capture/win_capture_stub.c',
     'src/souris_win_audio_stub.c',
     'src/encoder/video/souris_win_encode.c',
-    'src/cli/main.c',
 ]
+# CLI entry point kept separate so the same sources can be archived as
+# libsouris_gsr for the Rust SDK (see sdk/rust/souris-gsr-sdk/build.rs).
+src_cli_main = ['src/cli/main.c']
+src = src_lib + src_cli_main
 
 if is_linux
-    src += [
+    linux_src = [
         'kms/client/kms_client.c',
         'src/capture/nvfbc.c',
         'src/capture/xcomposite.c',
@@ -85,18 +88,23 @@ if is_linux
         'src/dbus.c',
         'src/sound.c',
     ]
+    src_lib += linux_src
+    src += linux_src
     subdir('protocol')
+    src_lib += protocol_src
     src += protocol_src
 endif
 
 if is_windows
     # Real Windows backends: WGC (default, window+monitor) with DXGI monitor
     # fallback, WASAPI audio (loopback/mic/per-app). See docs/WINDOWS_PORT.md.
-    src += [
+    win_src = [
         'src/capture/win/wgc.cpp',
         'src/capture/win/dxgi.cpp',
         'src/souris_win_audio_wasapi.cpp',
     ]
+    src_lib += win_src
+    src += win_src
 endif
 
 cc = meson.get_compiler('c')
@@ -151,18 +159,22 @@ uses_pipewire = false
 
 # PipeWire backends only exist on Linux.
 if is_linux and get_option('portal') == true
-    src += [
+    portal_src = [
         'src/capture/portal.c',
         'src/pipewire_video.c',
     ]
+    src_lib += portal_src
+    src += portal_src
     add_project_arguments('-DGSR_PORTAL', language : 'c')
     uses_pipewire = true
 endif
 
 if is_linux and get_option('app_audio') == true
-    src += [
+    app_audio_src = [
         'src/pipewire_audio.c',
     ]
+    src_lib += app_audio_src
+    src += app_audio_src
     add_project_arguments('-DGSR_APP_AUDIO', language : 'c')
     uses_pipewire = true
 endif
@@ -177,19 +189,37 @@ endif
 add_project_arguments('-DGSR_VERSION="' + meson.project_version() + '"', language: 'c')
 
 if is_linux
-    executable('gsr-kms-server', 'kms/server/kms_server.c', dependencies : dependency('libdrm'), c_args : '-fstack-protector-all', install : true)
+    executable('sgsr-kms-server', 'kms/server/kms_server.c', dependencies : dependency('libdrm'), c_args : '-fstack-protector-all', install : true)
 endif
-executable('gsr-cli', ['tools/gsr-cli/main.c', 'src/json.c', 'src/log.c'], install : true)
-executable('gpu-screen-recorder', src, dependencies : dep, install : true)
+executable('sgsr-cli', ['tools/gsr-cli/main.c', 'src/json.c', 'src/log.c'], install : true)
+executable('sgsr', src, dependencies : dep, install : true)
 
-install_headers('plugin/plugin.h', install_dir : 'include/gsr')
+# Embeddable engine for the Rust SDK (same sources as the CLI minus main).
+# Static lib is what build.rs links (SOURIS_GSR_LIB_DIR/libsouris_gsr.a);
+# shared lib is for distro packagers / dlopen embedders.
+souris_gsr_static = static_library('souris_gsr', src_lib, dependencies : dep, install : true)
+souris_gsr_shared = shared_library('souris_gsr', src_lib, dependencies : dep,
+    version : meson.project_version(), install : true)
+
+install_headers('../include/souris_gsr.h', subdir : 'souris')
+install_headers('plugin/plugin.h', install_dir : 'include/sgsr')
+
+# Offline unit tests for recording-only gain (no EGL/GPU needed).
+test_gain = executable('test-gain', ['tests/test_gain.c', 'src/souris_gain.c'],
+    include_directories : include_directories('include'))
+test('gain math + resolve + mic heuristic', test_gain)
+# vol= parser tests link the static engine lib (no display/server needed).
+test_volparse = executable('test-volparse', ['tests/test_volparse.c'],
+    link_with : souris_gsr_static, dependencies : dep,
+    include_directories : include_directories('include'))
+test('vol= parse + tracks + resolve precedence', test_volparse)
 if is_linux
-    install_man('gpu-screen-recorder.1', 'gsr-cli.1', 'gsr-kms-server.1')
-    install_subdir('scripts', install_dir: 'share/gpu-screen-recorder')
+    install_man('sgsr.1', 'sgsr-cli.1', 'sgsr-kms-server.1')
+    install_subdir('scripts', install_dir: 'share/sourisgsr')
 endif
 
 if is_linux and get_option('systemd') == true
-    install_data(files('extra/gpu-screen-recorder.service'), install_dir : 'lib/systemd/user')
+    install_data(files('extra/sourisgsr.service'), install_dir : 'lib/systemd/user')
 endif
 
 if is_linux and get_option('capabilities') == true

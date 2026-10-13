@@ -1,0 +1,7 @@
+[book]
+title = "SourisGSR"
+authors = ["SourisGSR contributors"]
+language = "en"
+
+[build]
+build-dir = "book"

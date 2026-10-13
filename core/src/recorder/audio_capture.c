@@ -17,8 +17,87 @@
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 
+/* SourisGSR VU peak 0-1 from a converted frame (gain already applied). */
+static float souris_frame_peak(const AVFrame *frame, const AVCodecContext *cc) {
+    if(!frame || !cc)
+        return 0.0f;
+    const int nb_samples = frame->nb_samples;
+#if LIBAVUTIL_VERSION_MAJOR >= 59
+    const int nb_channels = cc->ch_layout.nb_channels;
+#else
+    const int nb_channels = cc->channels;
+#endif
+    if(nb_samples <= 0 || nb_channels <= 0)
+        return 0.0f;
+    float peak = 0.0f;
+    const size_t total = (size_t)nb_samples * (size_t)nb_channels;
+    switch(cc->sample_fmt) {
+        case AV_SAMPLE_FMT_U8:
+            for(size_t i = 0; i < total; ++i) {
+                float v = fabsf(((float)frame->data[0][i] - 128.0f) / 128.0f);
+                if(v > peak) peak = v;
+            }
+            break;
+        case AV_SAMPLE_FMT_S16: {
+            const int16_t *s = (const int16_t*)frame->data[0];
+            for(size_t i = 0; i < total; ++i) {
+                float v = fabsf((float)s[i] / 32768.0f);
+                if(v > peak) peak = v;
+            }
+            break;
+        }
+        case AV_SAMPLE_FMT_S32: {
+            const int32_t *s = (const int32_t*)frame->data[0];
+            for(size_t i = 0; i < total; ++i) {
+                float v = (float)fabs((double)s[i] / 2147483648.0);
+                if(v > peak) peak = v;
+            }
+            break;
+        }
+        case AV_SAMPLE_FMT_S64: {
+            const int64_t *s = (const int64_t*)frame->data[0];
+            for(size_t i = 0; i < total; ++i) {
+                float v = (float)fabs((double)s[i] / 9223372036854775808.0);
+                if(v > peak) peak = v;
+            }
+            break;
+        }
+        case AV_SAMPLE_FMT_FLT: {
+            const float *s = (const float*)frame->data[0];
+            for(size_t i = 0; i < total; ++i) {
+                float v = fabsf(s[i]);
+                if(v > peak) peak = v;
+            }
+            break;
+        }
+        case AV_SAMPLE_FMT_DBL: {
+            const double *s = (const double*)frame->data[0];
+            for(size_t i = 0; i < total; ++i) {
+                float v = (float)fabs(s[i]);
+                if(v > peak) peak = v;
+            }
+            break;
+        }
+        case AV_SAMPLE_FMT_FLTP:
+            for(int ch = 0; ch < nb_channels; ++ch) {
+                const float *s = (const float*)frame->data[ch];
+                if(!s) continue;
+                for(int n = 0; n < nb_samples; ++n) {
+                    float v = fabsf(s[n]);
+                    if(v > peak) peak = v;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    if(peak > 1.0f) peak = 1.0f;
+    return peak;
+}
+
 /* SourisGSR: apply recording-only gain to the converted AVFrame.
-   Supports S16/S32/FLT (interleaved) and FLTP (planar). 1.0 = no-op. */
+   Supports U8/S16/S32/S64/FLT/DBL (interleaved) and S16P/S32P/FLTP/DBLP
+   (planar). 1.0 = no-op. Unknown formats log once and skip. */
 static void souris_apply_gain_to_frame(AVFrame *frame, AVCodecContext *cc, float gain) {
     if(!frame || !cc || gain == 1.0f)
         return;
@@ -31,20 +110,52 @@ static void souris_apply_gain_to_frame(AVFrame *frame, AVCodecContext *cc, float
     if(nb_samples <= 0 || nb_channels <= 0)
         return;
     switch(cc->sample_fmt) {
+        case AV_SAMPLE_FMT_U8:
+            souris_gain_apply_u8(frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
         case AV_SAMPLE_FMT_S16:
             souris_gain_apply_s16((int16_t*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
             break;
         case AV_SAMPLE_FMT_S32:
             souris_gain_apply_s32((int32_t*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
             break;
+        case AV_SAMPLE_FMT_S64:
+            souris_gain_apply_s64((int64_t*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
         case AV_SAMPLE_FMT_FLT:
             souris_gain_apply_flt((float*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
+        case AV_SAMPLE_FMT_DBL:
+            souris_gain_apply_dbl((double*)frame->data[0], (size_t)nb_samples * (size_t)nb_channels, gain);
+            break;
+        case AV_SAMPLE_FMT_U8P:
+            for(int ch = 0; ch < nb_channels; ++ch)
+                souris_gain_apply_u8(frame->data[ch], (size_t)nb_samples, gain);
+            break;
+        case AV_SAMPLE_FMT_S16P:
+            souris_gain_apply_s16p((int16_t**)frame->data, nb_channels, nb_samples, gain);
+            break;
+        case AV_SAMPLE_FMT_S32P:
+            souris_gain_apply_s32p((int32_t**)frame->data, nb_channels, nb_samples, gain);
             break;
         case AV_SAMPLE_FMT_FLTP:
             souris_gain_apply_fltp((float**)frame->data, nb_channels, nb_samples, gain);
             break;
-        default:
+        case AV_SAMPLE_FMT_S64P:
+            for(int ch = 0; ch < nb_channels; ++ch)
+                souris_gain_apply_s64((int64_t*)frame->data[ch], (size_t)nb_samples, gain);
             break;
+        case AV_SAMPLE_FMT_DBLP:
+            souris_gain_apply_dblp((double**)frame->data, nb_channels, nb_samples, gain);
+            break;
+        default: {
+            static int warned = 0;
+            if(!warned) {
+                gsr_log(GSR_LOG_LEVEL_WARNING, "souris gain: unsupported sample_fmt %d, volume ignored for this track", (int)cc->sample_fmt);
+                warned = 1;
+            }
+            break;
+        }
     }
 }
 
@@ -331,6 +442,16 @@ static void* audio_device_thread(void *userdata) {
             if(needs_audio_conversion && atomic_load(&device->volume_gain) != 1.0f)
                 souris_apply_gain_to_frame(device->frame, track->codec_context, atomic_load(&device->volume_gain));
 
+            /* SourisGSR VU peak (post-gain, thread-safe, throttled by reader). */
+            if(needs_audio_conversion) {
+                float peak = souris_frame_peak(device->frame, track->codec_context);
+                float cur = atomic_load(&self->level);
+                if(peak > cur)
+                    atomic_store(&self->level, peak);
+                else
+                    atomic_store(&self->level, cur * 0.95f + peak * 0.05f);
+            }
+
             pthread_mutex_lock(&self->filter_mutex);
 
             if(track->graph) {
@@ -448,6 +569,15 @@ bool gsr_audio_capture_add_track(gsr_audio_capture *self, const gsr_audio_track 
     self->tracks[self->num_tracks] = *track;
     ++self->num_tracks;
     return true;
+}
+
+float gsr_audio_capture_get_level(const gsr_audio_capture *self) {
+    if(!self)
+        return 0.0f;
+    float v = atomic_load(&self->level);
+    if(v < 0.0f) v = 0.0f;
+    if(v > 1.0f) v = 1.0f;
+    return v;
 }
 
 int gsr_audio_capture_start(gsr_audio_capture *self, int audio_max_frame_size, bool uses_amix) {
@@ -586,16 +716,54 @@ int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_a
 }
 
 #ifdef GSR_APP_AUDIO
-int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int app_volume_percent) {
+int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int mic_volume_percent, int system_volume_percent, int app_volume_percent) {
     const int alloc_result = audio_track_alloc_devices(self, 1);
     if(alloc_result != GSR_ERROR_OK)
         return alloc_result;
 
     gsr_audio_device_capture *device = &self->audio_devices[0];
-    /* Combined app-audio sink: recording-only gain from the app volume.
-       Mark the type so live set_volumes recomputes it as app audio. */
-    device->audio_input.type = GSR_AUDIO_INPUT_TYPE_APPLICATION;
-    atomic_store(&device->volume_gain, souris_volume_percent_to_gain(app_volume_percent));
+    /* Combined sink mixes upstream in PipeWire: honor per-input vol= when it is
+       unambiguous (single custom or all app customs equal), else global. */
+    bool has_app_custom = false;
+    float app_custom_vol = 1.0f;
+    bool app_custom_mixed = false;
+    bool has_device_custom = false;
+    for(size_t i = 0; i < merged_audio_inputs->num_items; ++i) {
+        const gsr_audio_input *ai = &merged_audio_inputs->items[i];
+        if(!ai->has_custom_volume)
+            continue;
+        if(ai->type == GSR_AUDIO_INPUT_TYPE_APPLICATION) {
+            if(!has_app_custom) {
+                has_app_custom = true;
+                app_custom_vol = ai->volume;
+            } else if(fabsf(app_custom_vol - ai->volume) > 1e-6f) {
+                app_custom_mixed = true;
+            }
+        } else {
+            has_device_custom = true;
+        }
+    }
+    float gain;
+    if(has_app_custom && !app_custom_mixed) {
+        gain = app_custom_vol < 0.0f ? 0.0f : (app_custom_vol > 1.0f ? 1.0f : app_custom_vol);
+        device->audio_input.type = GSR_AUDIO_INPUT_TYPE_APPLICATION;
+        device->audio_input.has_custom_volume = true;
+        device->audio_input.volume = gain;
+        snprintf(device->audio_input.name, sizeof(device->audio_input.name), "combined-app");
+    } else {
+        if(app_custom_mixed)
+            gsr_log(GSR_LOG_LEVEL_WARNING, "multiple app vol= values in one -a track mixed into a single combined sink, using global -app-volume %d instead", app_volume_percent);
+        if(has_device_custom)
+            gsr_log(GSR_LOG_LEVEL_WARNING, "device vol= inside an app-audio track shares the combined sink gain, using global volumes instead");
+        device->audio_input.type = GSR_AUDIO_INPUT_TYPE_APPLICATION;
+        device->audio_input.has_custom_volume = false;
+        device->audio_input.volume = 1.0f;
+        snprintf(device->audio_input.name, sizeof(device->audio_input.name), "combined-app");
+        gain = souris_volume_percent_to_gain(app_volume_percent);
+        (void)mic_volume_percent;
+        (void)system_volume_percent;
+    }
+    atomic_store(&device->volume_gain, gain);
     device->frame = create_audio_frame(audio_codec_context);
     if(!device->frame)
         return GSR_ERROR_GENERIC;
@@ -611,7 +779,7 @@ int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merg
     char combined_sink_name[64];
     snprintf(combined_sink_name, sizeof(combined_sink_name), "gsr-combined-%.*s.monitor", (int)sizeof(random_str), random_str);
 
-    if(sound_device_get_by_name(&device->sound_device, combined_sink_name, "", "gpu-screen-recorder", num_channels, audio_codec_context->frame_size, audio_codec_context_get_audio_format(audio_codec_context)) != 0) {
+    if(sound_device_get_by_name(&device->sound_device, combined_sink_name, "", "sourisgsr", num_channels, audio_codec_context->frame_size, audio_codec_context_get_audio_format(audio_codec_context)) != 0) {
         gsr_log(GSR_LOG_LEVEL_ERROR, "failed to setup audio recording to combined sink");
         return GSR_ERROR_GENERIC;
     }
@@ -684,4 +852,3 @@ void gsr_audio_track_deinit(gsr_audio_track *self) {
     if(self->codec_context)
         avcodec_free_context(&self->codec_context);
 }
-

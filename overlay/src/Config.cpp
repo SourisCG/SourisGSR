@@ -179,6 +179,7 @@ namespace gsr {
             {"main.software_encoding_warning_shown", &config.main_config.software_encoding_warning_shown},
             {"main.wayland_warning_shown", &config.main_config.wayland_warning_shown},
             {"main.exclude_metadata", &config.main_config.exclude_metadata},
+            {"main.show_tray_icon", &config.main_config.show_tray_icon},
             {"main.hotkeys_enable_option", &config.main_config.hotkeys_enable_option},
             {"main.joystick_hotkeys_enable_option", &config.main_config.joystick_hotkeys_enable_option},
             {"main.tint_color", &config.main_config.tint_color},
@@ -405,7 +406,7 @@ namespace gsr {
         }
 
         if(modified) {
-            fprintf(stderr, "Info: gsr-ui: upgraded the config file to the new format\n");
+            fprintf(stderr, "Info: sgsr-ui: upgraded the config file to the new format\n");
             save_config(config);
         }
     }

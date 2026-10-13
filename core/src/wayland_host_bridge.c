@@ -15,7 +15,7 @@
 #define GSR_UI_UNIX_SOCKET_DOMAIN_FD 3
 
 static const char *bridge_host_path =
-    "/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/bin/gsr-wayland-bridge";
+    "/var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/bin/sgsr-wayland-bridge";
 
 static int recv_fd(int sock) {
     char dummy = 0;

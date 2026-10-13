@@ -1,0 +1,46 @@
+.TH GSR-UI 1 "2024-08-01" "sgsr-ui" "User Commands"
+.SH NAME
+sgsr-ui \- A fullscreen overlay UI for GPU Screen Recorder in the style of ShadowPlay
+.SH DESCRIPTION
+\fBgsr-ui\fP is a fullscreen overlay UI for GPU Screen Recorder in the style of ShadowPlay.
+The application is currently primarily designed for X11 but it can run on Wayland as well through XWayland, with some caveats because of Wayland limitations.
+.PP
+This interface is built mainly for use with keyboard shortcuts.
+When launched for the first time, it runs in the background, ready to receive shortcut keys.
+On a subsequent launch, the fullscreen overlay UI appears.
+.SH SYSTEM TRAY
+SourisGSR registers an \fBorg.kde.StatusNotifierItem\fP tray icon (toggle it
+with "Show system tray icon" in global settings, takes effect on restart).
+Left/middle click shows or hides the overlay. There is no right-click menu in
+this version; use hotkeys, the overlay buttons or \fBgsr-ui-cli\fP(1) instead.
+The tray lives in \fBgsr-ui\fP only and never in embedding SDKs.
+.SH AUDIO VOLUMES
+Audio volume is set \fBper audio input\fP: every input row in the Audio
+settings has its own 0-100 slider (drag, arrow keys, mouse wheel,
+double-click resets to 100), stored as a \fB|vol=NN|\fP suffix on that input.
+All volumes are recording-only and never touch the system mixer. There are no
+global volume controls in the UI; the engine keeps
+\fB-mic-volume\fP/\fB-system-volume\fP/\fB-app-volume\fP as deprecated
+CLI/SDK fallbacks (see \fBgpu-screen-recorder\fP(1)).
+.SH AUTHORS
+This manual page was written by the Debian team.
+.SH REPORTING BUGS
+Report bugs to:
+.UR mailto:dec05eba@protonmail.com
+dec05eba@protonmail.com
+.UE .
+.br
+Please take a look at the FAQ part of the README before reporting a bug: \fIhttps://git.dec05eba.com/gpu-screen-recorder-ui/about\fR.
+.SH COPYRIGHT
+Copyright \(co dec05eba. Licensed under GPL-3.0-only.
+.SH SEE ALSO
+.UR https://git.dec05eba.com/gpu-screen-recorder-ui
+Project homepage
+.UE
+.br
+.UR https://git.dec05eba.com/gpu-screen-recorder
+GPU Screen Recorder homepage (CLI)
+.UE
+.br
+.BR sgsr (1),
+.BR sgsr-ui-cli (1)

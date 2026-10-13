@@ -57,8 +57,8 @@ static void file_write_all(int file_fd, const char *str) {
 }
 
 static void usage(void) {
-    printf("usage: gsr-ui-cli <command>\n");
-    printf("Run commands on the running gsr-ui instance.\n");
+    printf("usage: sgsr-ui-cli <command>\n");
+    printf("Run commands on the running sgsr-ui instance.\n");
     printf("\n");
     printf("COMMANDS:\n");
     printf("  toggle-show\n");
@@ -101,12 +101,14 @@ static void usage(void) {
     printf("      Take a screenshot of a window (or desktop portal on Wayland).\n");
     printf("  reload-config\n");
     printf("      Reloads the config.\n");
+    printf("  quit\n");
+    printf("      Close the running sgsr-ui instance.\n");
     printf("  status\n");
-    printf("      Prints \"running\" and exits with 0 if gsr-ui is running, otherwise prints \"not running\" and exits with 1.\n");
+    printf("      Prints \"running\" and exits with 0 if sgsr-ui is running, otherwise prints \"not running\" and exits with 1.\n");
     printf("\n");
     printf("EXAMPLES:\n");
-    printf("  gsr-ui-cli toggle-show\n");
-    printf("  gsr-ui-cli toggle-record\n");
+    printf("  sgsr-ui-cli toggle-show\n");
+    printf("  sgsr-ui-cli toggle-record\n");
     exit(1);
 }
 
@@ -132,6 +134,7 @@ static bool is_valid_command(const char *command) {
         "take-screenshot-region",
         "take-screenshot-window",
         "reload-config",
+        "quit",
         "status",
         NULL
     };
@@ -148,7 +151,7 @@ static bool is_valid_command(const char *command) {
 static int connect_to_gsr_ui(void) {
     struct sockaddr_un addr;
     socklen_t addrlen = 0;
-    if(!build_abstract_address("gsr-ui", &addr, &addrlen)) {
+    if(!build_abstract_address("sgsr-ui", &addr, &addrlen)) {
         fprintf(stderr, "Error: socket name too long\n");
         exit(2);
     }
@@ -203,7 +206,7 @@ int main(int argc, char **argv) {
     }
 
     if(socket_fd == -1) {
-        fprintf(stderr, "Error: failed to connect, error: %s. Maybe gsr-ui is not running?\n", strerror(errno));
+        fprintf(stderr, "Error: failed to connect, error: %s. Maybe sgsr-ui is not running?\n", strerror(errno));
         exit(2);
     }
 

@@ -54,7 +54,7 @@ namespace gsr {
 
     namespace {
         bool app_id_is_ignored(const std::string &app_id) {
-            return app_id == "gsr-ui" || app_id == "gsr-notify";
+            return app_id == "sgsr-ui" || app_id == "gsr-notify";
         }
 
         void toplevel_handle_title(void *data, struct zwlr_foreign_toplevel_handle_v1*, const char *title) {
@@ -230,7 +230,7 @@ namespace gsr {
     static bool parse_json(const std::string &input, picojson::value &result, const char *command_name) {
         const std::string parse_err = picojson::parse(result, input);
         if(!parse_err.empty()) {
-            fprintf(stderr, "error: gsr-ui: failed to parse %s output, error: %s\n", command_name, parse_err.c_str());
+            fprintf(stderr, "error: sgsr-ui: failed to parse %s output, error: %s\n", command_name, parse_err.c_str());
             return false;
         }
         return true;
@@ -428,10 +428,10 @@ namespace gsr {
 
                     FocusedWindow focused_window;
                     Window window = None;
-                    focused_window.title = get_window_name_at_cursor_position(impl->x11_dpy, "gsr-ui", &window);
+                    focused_window.title = get_window_name_at_cursor_position(impl->x11_dpy, "sgsr-ui", &window);
                     if(focused_window.title.empty()) {
                         window = None;
-                        focused_window.title = get_focused_window_name(impl->x11_dpy, WindowCaptureType::FOCUSED, false, "gsr-ui", &window);
+                        focused_window.title = get_focused_window_name(impl->x11_dpy, WindowCaptureType::FOCUSED, false, "sgsr-ui", &window);
                     }
 
                     if(window != None)

@@ -12,20 +12,27 @@ for **Linux + Windows** with maximum reuse of the existing C core and an embedda
 
 ```
 core/                 gpu-screen-recorder upstream (CLI + AV pipeline) + SourisGSR changes
-  include/souris_gain.h / src/souris_gain.c        0-100% recording-only gain
+  include/souris_gain.h / src/souris_gain.c        0-100% recording-only gain + VU peak
   include/capture/win_capture.h                    WGC (default) + DXGI (fallback)
   include/souris_win_audio.h                       WASAPI loopback/mic/per-app
   include/encoder/video/souris_win_encode.h        NVENC/AMF/QSV/MF mapping
-  src/souris_gsr.c                                 embeddable C ABI (v1)
+  src/souris_gsr.c                                 embeddable C ABI (v2)
+  src/cli/ipc.c + tools/gsr-cli/                   set-volumes live + get-level ready
+  tests/test_gain.c                                meson test (offline)
   docs/WINDOWS_PORT.md                             detailed port plan
-overlay/              gpu-screen-recorder-ui (ShadowPlay overlay, backend to be ported to Win)
-  include/souris/OverlayBackend.hpp                LinuxEGL vs WinD3D11 abstraction
-docs/ref-gtk/         gpu-screen-recorder-gtk (settings reference only)
-include/souris_gsr.h  stable C ABI (sole surface for the SDK)
-sdk/rust/             souris-gsr-sdk crate + embed_basic/embed_replay examples
+overlay/              ShadowPlay overlay (same options Linux/Win)
+  src/gui/SettingsPage.cpp                         globals + per-input vol= rows
+  src/Overlay.cpp                                  no silent app-audio drop
+docs/book/            English mdBook (build-linux/windows, usage, arch, sdk)
+  ref-gtk/            gpu-screen-recorder-gtk (settings reference only)
+include/souris_gsr.h  stable C ABI v2 (sole surface for the SDK)
+sdk/rust/             souris-gsr-sdk (mock + Engine ffi) + embed_* examples
+tools/archive_libsouris.sh  libsouris_gsr.a helper for SDK link
 ```
 
-## What's new in SourisGSR (v1 in this commit)
+Docs: `docs/book/src/` (`mdbook build docs/book`). Man: `core/gpu-screen-recorder.1`, `core/gsr-cli.1`.
+
+## What's new in SourisGSR (v2 in this commit)
 
 ### 1. OBS-style 0-100 volume modifier — recording only
 Never touches the system volume. Software gain applied post-capture.
@@ -34,9 +41,10 @@ Never touches the system volume. Software gain applied post-capture.
   ```sh
   gpu-screen-recorder -w portal -f 60 -a default_output -a default_input \
     -mic-volume 90 -system-volume 80 -o video.mp4
+  gsr-cli -ipc "$XDG_RUNTIME_DIR/gsr.sock" set-volumes 80 100 90
   ```
-- Overlay UI: sliders still to be wired to these same flags/`vol=` (next step).
-- SDK: `.mic_volume(90).system_volume(80)` + hot `set_volumes()`.
+- Overlay UI: globals + per-row `vol` entries emitting `|vol=`, no silent drops.
+- SDK: `.mic_volume(90).system_volume(80)` + hot `set_volumes()` + `LevelMeter` VU.
 
 ### 2. Individual windows
 - Linux: already exists (`-w window|focused|portal`). On Wayland the picker is
@@ -55,9 +63,10 @@ let rec = Recorder::builder()
     .on_event(|e| println!("{e:?}"))
     .start()?;
 rec.stop()?;
+// Real engine (ffi): .start_engine()? + .output_url(rtmp://) + .replay() + list_*()
 ```
-See `sdk/rust/`. C ABI: `include/souris_gsr.h` (`sgsr_start/stop/pause/resume/
-save_replay/screenshot/set_volumes`, enumeration, events).
+See `sdk/rust/` + `docs/book/src/sdk-rust.md`. C ABI v2: `include/souris_gsr.h`
+(`sgsr_start/stop/pause/resume/save_replay/screenshot/set_volumes`, enumeration, `LEVEL_METER`).
 
 ## Build
 
@@ -78,10 +87,12 @@ meson setup overlay-build overlay && meson compile -C overlay-build
 Windows 11 (once the real backend lands): `Meson + MSVC + vcpkg`
 (ffmpeg, C++/WinRT for WGC). See `core/docs/WINDOWS_PORT.md`.
 
-Rust SDK (no external dependencies, works offline):
+Rust SDK (mock offline, engine with link):
 ```sh
-cargo test -p souris-gsr-sdk
-cargo run -p embed_basic
+cargo test -p souris-gsr-sdk --manifest-path sdk/rust/Cargo.toml
+./tools/archive_libsouris.sh /tmp/sgsr-build /tmp/sgsr-native
+SOURIS_GSR_LIB_DIR=/tmp/sgsr-native cargo test --features ffi -p souris-gsr-sdk --manifest-path sdk/rust/Cargo.toml
+cargo run -p embed_list --manifest-path sdk/rust/Cargo.toml
 ```
 
 ## Syncing with upstream (no `clone` inside this folder)

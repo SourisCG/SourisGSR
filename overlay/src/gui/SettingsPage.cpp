@@ -3,6 +3,7 @@
 #include "../../include/gui/Label.hpp"
 #include "../../include/gui/PageStack.hpp"
 #include "../../include/gui/FileChooser.hpp"
+#include "../../include/gui/Slider.hpp"
 #include "../../include/gui/Subsection.hpp"
 #include "../../include/gui/LineSeparator.hpp"
 #include "../../include/gui/CustomRendererWidget.hpp"
@@ -47,6 +48,52 @@ namespace gsr {
         T result = 0;
         std::from_chars(str.data(), str.data() + str.size(), result);
         return result;
+    }
+
+    // SourisGSR per-input recording-only volume: "id|vol=NN" suffix.
+    // Returns base id without suffix and vol 0-100 (100 = default/omitted).
+    static std::string souris_split_vol_suffix(const std::string &s, int &vol_out) {
+        vol_out = 100;
+        const size_t pos = s.rfind("|vol=");
+        if(pos == std::string::npos)
+            return s;
+        const std::string num = s.substr(pos + 5);
+        int v = 0;
+        try { v = std::stoi(num); } catch(...) { return s; }
+        if(v < 0) v = 0;
+        if(v > 100) v = 100;
+        vol_out = v;
+        return s.substr(0, pos);
+    }
+
+    static std::string souris_with_vol_suffix(const std::string &id, int vol) {
+        if(vol < 0) vol = 0;
+        if(vol > 100) vol = 100;
+        if(vol == 100)
+            return id;
+        return id + "|vol=" + std::to_string(vol);
+    }
+
+    // SourisGSR per-input recording-only volume slider (0-100, default 100).
+    // Narrow bar (~old Entry footprint) so label + combo + slider + remove
+    // button fit in one audio row; the HORIZONTAL List never shrinks children.
+    static std::unique_ptr<Slider> souris_make_vol_slider() {
+        const char *font_desc = get_theme().body_font_desc.c_str();
+        const float bar_w = 5.5f * mgl::Text::get_font_size_from_font_description(font_desc);
+        auto slider = std::make_unique<Slider>(font_desc, 0, 100, 100, bar_w);
+        slider->set_tooltip_text(TR("Volume for this input only (0-100, recording only). Drag, arrow keys, mouse wheel, double-click resets to 100."));
+        return slider;
+    }
+
+    static int souris_slider_vol(Widget *w) {
+        Slider *s = dynamic_cast<Slider*>(w);
+        if(!s) return 100;
+        return s->get_value();
+    }
+
+    static void souris_slider_set_vol(Widget *w, int vol) {
+        if(Slider *s = dynamic_cast<Slider*>(w))
+            s->set_value(vol);
     }
 
     static bool supports_vulkan_video_encoding(const SupportedVideoCodecs &supported_video_codecs) {
@@ -554,6 +601,16 @@ namespace gsr {
         return audio_device_id == "default_output" || ends_with(audio_device_id, ".monitor");
     }
 
+    // SourisGSR: ComboBox sizes to its longest item, so long device descriptions
+    // (e.g. outputs) overflow the audio row and push the remove button out.
+    // Truncate display text only; ids used for save/CLI stay intact.
+    static std::string souris_shorten_combo_text(std::string s) {
+        constexpr size_t MAX_COMBO_CHARS = 42;
+        if(s.size() > MAX_COMBO_CHARS)
+            s.replace(MAX_COMBO_CHARS - 1, std::string::npos, "…");
+        return s;
+    }
+
     std::unique_ptr<ComboBox> SettingsPage::create_audio_device_selection_combobox(AudioDeviceType device_type) {
         auto audio_device_box = std::make_unique<ComboBox>(get_theme().body_font_desc.c_str());
         for(const auto &audio_device : audio_devices) {
@@ -562,7 +619,7 @@ namespace gsr {
                 std::string description = audio_device.description;
                 if(starts_with(description, "Monitor of "))
                     description.erase(0, 11);
-                audio_device_box->add_item(description, audio_device.name);
+                audio_device_box->add_item(souris_shorten_combo_text(description), audio_device.name);
             }
         }
         return audio_device_box;
@@ -609,6 +666,8 @@ namespace gsr {
         audio_device_list->userdata = (void*)(uintptr_t)AudioTrackType::DEVICE;
         audio_device_list->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), device_type == AudioDeviceType::OUTPUT ? TR("Output device:") : TR("Input device:   "), get_color_theme().text_color));
         audio_device_list->add_widget(create_audio_device_selection_combobox(device_type));
+        // Per-input recording-only volume 0-100 (appended as |vol=NN).
+        audio_device_list->add_widget(souris_make_vol_slider());
         audio_device_list->add_widget(create_remove_audio_device_button(audio_input_list_ptr, audio_device_list.get()));
         return audio_device_list;
     }
@@ -701,6 +760,7 @@ namespace gsr {
         application_audio_list->userdata = (void*)(uintptr_t)AudioTrackType::APPLICATION;
         application_audio_list->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), TR("Application:     "), get_color_theme().text_color));
         application_audio_list->add_widget(create_application_audio_selection_combobox(application_audio_list.get()));
+        application_audio_list->add_widget(souris_make_vol_slider());
         application_audio_list->add_widget(create_remove_audio_device_button(audio_input_list_ptr, application_audio_list.get()));
         return application_audio_list;
     }
@@ -710,6 +770,7 @@ namespace gsr {
         application_audio_list->userdata = (void*)(uintptr_t)AudioTrackType::APPLICATION_CUSTOM;
         application_audio_list->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), TR("Application:     "), get_color_theme().text_color));
         application_audio_list->add_widget(std::make_unique<Entry>(get_theme().body_font_desc.c_str(), "", (int)(2.0f*mgl::Text::get_font_size_from_font_description(get_theme().body_font_desc.c_str()) * 10.0f)));
+        application_audio_list->add_widget(souris_make_vol_slider());
         application_audio_list->add_widget(create_remove_audio_device_button(audio_input_list_ptr, application_audio_list.get()));
         return application_audio_list;
     }
@@ -848,27 +909,6 @@ namespace gsr {
         return list;
     }
 
-    // SourisGSR: recording-only volumes 0-100 (OBS style). These never touch
-    // the system mixer; they are passed to the CLI as -mic/-system/-app-volume.
-    std::unique_ptr<List> SettingsPage::create_audio_volume_entry(const char *label, Entry **out_entry) {
-        auto list = std::make_unique<List>(List::Orientation::HORIZONTAL, List::Alignment::CENTER);
-        list->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), label, get_color_theme().text_color));
-
-        auto entry = std::make_unique<Entry>(get_theme().body_font_desc.c_str(), "100", (int)(2.0f*mgl::Text::get_font_size_from_font_description(get_theme().body_font_desc.c_str()) * 4));
-        entry->set_number_mode(true, 0, 100);
-        *out_entry = entry.get();
-        list->add_widget(std::move(entry));
-        return list;
-    }
-
-    std::unique_ptr<List> SettingsPage::create_audio_volumes() {
-        auto list = std::make_unique<List>(List::Orientation::VERTICAL);
-        list->add_widget(create_audio_volume_entry(TR("Microphone volume (recording only, 0-100):"), &mic_volume_entry_ptr));
-        list->add_widget(create_audio_volume_entry(TR("System volume (recording only, 0-100):"), &system_volume_entry_ptr));
-        list->add_widget(create_audio_volume_entry(TR("Application volume (recording only, 0-100):"), &app_volume_entry_ptr));
-        return list;
-    }
-
     std::unique_ptr<Widget> SettingsPage::create_audio_section() {
         auto audio_device_section_list = std::make_unique<List>(List::Orientation::VERTICAL);
         List *audio_device_section_list_ptr = audio_device_section_list.get();
@@ -877,7 +917,15 @@ namespace gsr {
         audio_section_ptr = subsection.get();
         audio_device_section_list_ptr->add_widget(create_add_audio_track_button());
         audio_device_section_list_ptr->add_widget(create_audio_track_section_list());
-        audio_device_section_list_ptr->add_widget(create_audio_volumes());
+        // SourisGSR per-track-only volumes: each audio input row carries its
+        // own 0-100 volume (stored as |vol=NN). Global mic/system/app volumes
+        // were removed from the UI; the engine keeps them as deprecated
+        // fallbacks for CLI/SDK compatibility.
+        {
+            auto note = std::make_unique<List>(List::Orientation::HORIZONTAL, List::Alignment::CENTER);
+            note->add_widget(std::make_unique<Label>(get_theme().body_font_desc.c_str(), TR("Volume is set per audio input above (0-100, recording only)."), get_color_theme().text_color));
+            audio_device_section_list_ptr->add_widget(std::move(note));
+        }
         audio_device_section_list_ptr->add_widget(create_audio_codec());
         return subsection;
     }
@@ -1810,36 +1858,59 @@ namespace gsr {
             application_audio_invert_checkbox_ptr->set_checked(audio_track.application_audio_invert);
             dynamic_cast<Entry*>(custom_audio_track_name_list_ptr->get_child_widget_by_index(1))->set_text(audio_track.name);
             audio_input_list_ptr->clear();
-            for(const std::string &audio_input : audio_track.audio_inputs) {
-                if(starts_with(audio_input, "app:")) {
-                    if(!gsr_info->system_info.supports_app_audio)
-                        continue;
-
-                    std::string audio_track_name = audio_input.substr(4);
+            for(const std::string &audio_input_raw : audio_track.audio_inputs) {
+                int vol = 100;
+                // Strip |vol=NN for id matching, keep vol for the row widget.
+                const std::string audio_input_base = souris_split_vol_suffix(audio_input_raw, vol);
+                auto set_row_vol = [&](List *row) {
+                    if(row && row->get_num_children() >= 4)
+                        souris_slider_set_vol(row->get_child_widget_by_index(2), vol);
+                };
+                if(starts_with(audio_input_base, "app:")) {
+                    // No silent drop: still show the row even without PipeWire
+                    // support so the user sees what would be recorded.
+                    std::string audio_track_name = audio_input_base.substr(4);
+                    // vol suffix may trail the app name (app:firefox|vol=80 was
+                    // already split, but be defensive).
+                    int inner_vol = 100;
+                    const std::string app_base = souris_split_vol_suffix(audio_track_name, inner_vol);
+                    if(inner_vol != 100) vol = inner_vol;
+                    audio_track_name = app_base;
                     const std::string *app_audio = get_application_audio_by_name_case_insensitive(application_audio, audio_track_name);
                     if(app_audio) {
                         std::unique_ptr<List> application_audio_widget = create_application_audio(audio_input_list_ptr);
                         ComboBox *application_audio_box = dynamic_cast<ComboBox*>(application_audio_widget->get_child_widget_by_index(1));
                         application_audio_box->set_selected_item(*app_audio);
+                        set_row_vol(application_audio_widget.get());
                         audio_input_list_ptr->add_widget(std::move(application_audio_widget));
                     } else {
                         std::unique_ptr<List> application_audio_widget = create_custom_application_audio(audio_input_list_ptr);
                         Entry *application_audio_entry = dynamic_cast<Entry*>(application_audio_widget->get_child_widget_by_index(1));
                         application_audio_entry->set_text(std::move(audio_track_name));
+                        set_row_vol(application_audio_widget.get());
                         audio_input_list_ptr->add_widget(std::move(application_audio_widget));
                     }
-                } else if(starts_with(audio_input, "device:")) {
-                    const std::string device_name = audio_input.substr(7);
+                } else if(starts_with(audio_input_base, "device:")) {
+                    int dev_vol = vol;
+                    std::string device_name = audio_input_base.substr(7);
+                    // device:xxx|vol= was split above; handle nested just in case.
+                    device_name = souris_split_vol_suffix(device_name, dev_vol);
+                    if(dev_vol != 100) vol = dev_vol;
                     const AudioDeviceType audio_device_type = audio_device_is_output(device_name) ? AudioDeviceType::OUTPUT : AudioDeviceType::INPUT;
                     std::unique_ptr<List> audio_track_widget = create_audio_device(audio_device_type, audio_input_list_ptr);
                     ComboBox *audio_device_box = dynamic_cast<ComboBox*>(audio_track_widget->get_child_widget_by_index(1));
                     audio_device_box->set_selected_item(device_name);
+                    set_row_vol(audio_track_widget.get());
                     audio_input_list_ptr->add_widget(std::move(audio_track_widget));
                 } else {
-                    const AudioDeviceType audio_device_type = audio_device_is_output(audio_input) ? AudioDeviceType::OUTPUT : AudioDeviceType::INPUT;
+                    int bare_vol = vol;
+                    std::string bare = souris_split_vol_suffix(audio_input_base, bare_vol);
+                    if(bare_vol != 100) vol = bare_vol;
+                    const AudioDeviceType audio_device_type = audio_device_is_output(bare) ? AudioDeviceType::OUTPUT : AudioDeviceType::INPUT;
                     std::unique_ptr<List> audio_track_widget = create_audio_device(audio_device_type, audio_input_list_ptr);
                     ComboBox *audio_device_box = dynamic_cast<ComboBox*>(audio_track_widget->get_child_widget_by_index(1));
-                    audio_device_box->set_selected_item(audio_input);
+                    audio_device_box->set_selected_item(bare);
+                    set_row_vol(audio_track_widget.get());
                     audio_input_list_ptr->add_widget(std::move(audio_track_widget));
                 }
             }
@@ -1862,21 +1933,11 @@ namespace gsr {
         record_area_box_ptr->set_selected_item(record_options.record_area_option);
         change_video_resolution_checkbox_ptr->set_checked(record_options.change_video_resolution);
         load_audio_tracks(record_options);
-        if(record_options.mic_volume < 0)
-            record_options.mic_volume = 0;
-        if(record_options.mic_volume > 100)
-            record_options.mic_volume = 100;
-        if(record_options.system_volume < 0)
-            record_options.system_volume = 0;
-        if(record_options.system_volume > 100)
-            record_options.system_volume = 100;
-        if(record_options.app_volume < 0)
-            record_options.app_volume = 0;
-        if(record_options.app_volume > 100)
-            record_options.app_volume = 100;
-        mic_volume_entry_ptr->set_text(std::to_string(record_options.mic_volume));
-        system_volume_entry_ptr->set_text(std::to_string(record_options.system_volume));
-        app_volume_entry_ptr->set_text(std::to_string(record_options.app_volume));
+        // Deprecated global volumes: still read from old configs for
+        // migration, but no longer shown or emitted. Per-track vol= rules.
+        if(record_options.mic_volume != 100 || record_options.system_volume != 100 || record_options.app_volume != 100) {
+            fprintf(stderr, "Warning: global mic/system/app volumes are deprecated and ignored; set a 0-100 volume on each audio input instead\n");
+        }
         color_range_box_ptr->set_selected_item(record_options.color_range);
         video_quality_box_ptr->set_selected_item(record_options.video_quality);
         video_codec_box_ptr->set_selected_item(record_options.video_codec);
@@ -2002,20 +2063,26 @@ namespace gsr {
             audio_input_list_ptr->for_each_child_widget([&audio_tracks](std::unique_ptr<Widget> &child_widget){
                 List *audio_track_line = dynamic_cast<List*>(child_widget.get());
                 const AudioTrackType audio_track_type = (AudioTrackType)(uintptr_t)audio_track_line->userdata;
+                // Vol slider is index 2 when present (4 children), else default 100.
+                auto get_vol = [&]() -> int {
+                    if(audio_track_line->get_num_children() >= 4)
+                        return souris_slider_vol(audio_track_line->get_child_widget_by_index(2));
+                    return 100;
+                };
                 switch(audio_track_type) {
                     case AudioTrackType::DEVICE: {
                         ComboBox *audio_device_box = dynamic_cast<ComboBox*>(audio_track_line->get_child_widget_by_index(1));
-                        audio_tracks.back().audio_inputs.push_back("device:" + std::string(audio_device_box->get_selected_id()));
+                        audio_tracks.back().audio_inputs.push_back(souris_with_vol_suffix("device:" + std::string(audio_device_box->get_selected_id()), get_vol()));
                         break;
                     }
                     case AudioTrackType::APPLICATION: {
                         ComboBox *application_audio_box = dynamic_cast<ComboBox*>(audio_track_line->get_child_widget_by_index(1));
-                        audio_tracks.back().audio_inputs.push_back("app:" + std::string(application_audio_box->get_selected_id()));
+                        audio_tracks.back().audio_inputs.push_back(souris_with_vol_suffix("app:" + std::string(application_audio_box->get_selected_id()), get_vol()));
                         break;
                     }
                     case AudioTrackType::APPLICATION_CUSTOM: {
                         Entry *application_audio_entry = dynamic_cast<Entry*>(audio_track_line->get_child_widget_by_index(1));
-                        audio_tracks.back().audio_inputs.push_back("app:" + std::string(application_audio_entry->get_text()));
+                        audio_tracks.back().audio_inputs.push_back(souris_with_vol_suffix("app:" + std::string(application_audio_entry->get_text()), get_vol()));
                         break;
                     }
                 }
@@ -2037,33 +2104,11 @@ namespace gsr {
         record_options.video_bitrate = sv_to_int<int32_t>(video_bitrate_entry_ptr->get_text());
         record_options.change_video_resolution = change_video_resolution_checkbox_ptr->is_checked();
         save_audio_tracks(record_options.audio_tracks_list, audio_track_section_list_ptr);
-        record_options.mic_volume = sv_to_int<int32_t>(mic_volume_entry_ptr->get_text());
-        record_options.system_volume = sv_to_int<int32_t>(system_volume_entry_ptr->get_text());
-        record_options.app_volume = sv_to_int<int32_t>(app_volume_entry_ptr->get_text());
-        if(record_options.mic_volume < 0) {
-            record_options.mic_volume = 0;
-            mic_volume_entry_ptr->set_text("0");
-        }
-        if(record_options.mic_volume > 100) {
-            record_options.mic_volume = 100;
-            mic_volume_entry_ptr->set_text("100");
-        }
-        if(record_options.system_volume < 0) {
-            record_options.system_volume = 0;
-            system_volume_entry_ptr->set_text("0");
-        }
-        if(record_options.system_volume > 100) {
-            record_options.system_volume = 100;
-            system_volume_entry_ptr->set_text("100");
-        }
-        if(record_options.app_volume < 0) {
-            record_options.app_volume = 0;
-            app_volume_entry_ptr->set_text("0");
-        }
-        if(record_options.app_volume > 100) {
-            record_options.app_volume = 100;
-            app_volume_entry_ptr->set_text("100");
-        }
+        // Deprecated: overlay no longer edits global volumes. Force 100 so
+        // stale non-100 values from old configs are never emitted.
+        record_options.mic_volume = 100;
+        record_options.system_volume = 100;
+        record_options.app_volume = 100;
         record_options.color_range = color_range_box_ptr->get_selected_id();
         record_options.video_quality = video_quality_box_ptr->get_selected_id();
         record_options.video_codec = video_codec_box_ptr->get_selected_id();

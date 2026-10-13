@@ -1,5 +1,6 @@
 #include "../include/GsrInfo.hpp"
 #include "../include/Overlay.hpp"
+#include "../include/TrayIcon.hpp"
 #include "../include/Utils.hpp"
 #include "../include/gui/Utils.hpp"
 #include "../include/Process.hpp"
@@ -72,7 +73,8 @@ static void rpc_add_commands(gsr::Rpc *rpc, gsr::Overlay *overlay) {
         { "take-screenshot",        [overlay]() { overlay->take_screenshot(); } },
         { "take-screenshot-region", [overlay]() { overlay->take_screenshot_region(); } },
         { "take-screenshot-window", [overlay]() { overlay->take_screenshot_window(); } },
-        { "reload-config",          [overlay]() { overlay->reload_config(); } },
+        { "reload-config",            [overlay]() { overlay->reload_config(); } },
+        { "quit",                     [overlay]() { overlay->exit(); } },
     };
 
     for(const auto &[command_name, command] : commands) {
@@ -100,7 +102,7 @@ static void set_display_server_environment_variables() {
 }
 
 static void usage() {
-    printf("usage: gsr-ui [action]\n");
+    printf("usage: sgsr-ui [action]\n");
     printf("OPTIONS:\n");
     printf("  action  The launch action. Should be either \"launch-show\", \"launch-hide\", \"launch-hide-announce\" or \"launch-daemon\". Optional, defaults to \"launch-hide\".\n");
     printf("          If \"launch-show\" is used then the program starts and the UI is immediately opened and can be shown/hidden with Alt+Z.\n");
@@ -125,13 +127,13 @@ int main(int argc, char **argv) {
 #endif
 
     std::string resources_path;
-    if(access("sibs-build/linux_x86_64/debug/gsr-ui", F_OK) == 0) {
+    if(access("sibs-build/linux_x86_64/debug/sgsr-ui", F_OK) == 0) {
         resources_path = "./";
     } else {
 #ifdef GSR_UI_RESOURCES_PATH
         resources_path = GSR_UI_RESOURCES_PATH "/";
 #else
-        resources_path = "/usr/share/gsr-ui/";
+        resources_path = "/usr/share/sgsr-ui/";
 #endif
     }
 
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
     gsr::Translation::instance().init((resources_path + "translations/").c_str(), config.has_value() ? config.value().main_config.language.c_str() : nullptr);
 
     if(geteuid() == 0) {
-        fprintf(stderr, "Error: don't run gsr-ui as the root user\n");
+        fprintf(stderr, "Error: don't run sgsr-ui as the root user\n");
         return 1;
     }
 
@@ -171,22 +173,22 @@ int main(int argc, char **argv) {
 
     set_display_server_environment_variables();
 
-    const std::string gsr_icon_path = resources_path + "images/gpu_screen_recorder_logo.png";
+    const std::string gsr_icon_path = resources_path + "images/sourisgsr_logo.png";
     std::string show_hide_hotkey_str = "Alt+Z";
     if(config.has_value())
         show_hide_hotkey_str = config.value().main_config.show_hide_hotkey.to_string(true, true);
 
     auto rpc = std::make_unique<gsr::Rpc>();
-    const gsr::RpcOpenResult rpc_open_result = rpc->open("gsr-ui");
+    const gsr::RpcOpenResult rpc_open_result = rpc->open("sgsr-ui");
 
     if(rpc_open_result == gsr::RpcOpenResult::OK) {
         if(launch_action == LaunchAction::LAUNCH_DAEMON)
             return 1;
 
         if(rpc->write("show_ui\n", 8)) {
-            fprintf(stderr, "Error: another instance of gsr-ui is already running, opening that one instead\n");
+            fprintf(stderr, "Error: another instance of sgsr-ui is already running, opening that one instead\n");
         } else {
-            fprintf(stderr, "Error: failed to send command to running gsr-ui instance, user will have to open the UI manually with %s\n", show_hide_hotkey_str.c_str());
+            fprintf(stderr, "Error: failed to send command to running sgsr-ui instance, user will have to open the UI manually with %s\n", show_hide_hotkey_str.c_str());
             const std::string msg = TRF("Another instance of GPU Screen Recorder UI is already running. Press %s to open the UI.", show_hide_hotkey_str.c_str());
             const char *args[] = {
                 "gsr-notify", "--text", msg.c_str(), "--timeout", "5.0",
@@ -197,10 +199,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if(!rpc->create("gsr-ui"))
+    if(!rpc->create("sgsr-ui"))
         fprintf(stderr, "Error: Failed to create rpc\n");
 
-    if(gsr::pidof("gpu-screen-recorder", -1) != -1) {
+    if(gsr::pidof("sgsr", -1) != -1) {
         const char *args[] = {
             "gsr-notify", "--text", TR("GPU Screen Recorder is already running in another process. Please close it before using GPU Screen Recorder UI."),
             "--timeout", "5.0", "--icon-color", "ffffff", "--icon", gsr_icon_path.c_str(), "--bg-color", "ff0000", nullptr
@@ -255,7 +257,7 @@ int main(int argc, char **argv) {
     // TODO: Show the error in ui
     gsr::GsrInfoExitStatus gsr_info_exit_status = gsr::get_gpu_screen_recorder_info(&gsr_info);
     if(gsr_info_exit_status != gsr::GsrInfoExitStatus::OK) {
-        fprintf(stderr, "Error: failed to get gpu-screen-recorder info, error: %d\n", (int)gsr_info_exit_status);
+        fprintf(stderr, "Error: failed to get sgsr info, error: %d\n", (int)gsr_info_exit_status);
         exit(1);
     }
 
@@ -294,16 +296,25 @@ int main(int argc, char **argv) {
 
     rpc_add_commands(rpc.get(), overlay.get());
 
+    // SourisGSR system tray (sgsr-ui only, never in the SDK). Silent when no
+    // StatusNotifierWatcher is available (e.g. headless, flatpak filtering).
+    auto tray = std::make_unique<gsr::TrayIcon>();
+    const bool want_tray = !config.has_value() || config.value().main_config.show_tray_icon;
+    if(want_tray && !tray->start()) {
+        fprintf(stderr, "Info: system tray unavailable, continuing without tray icon\n");
+        tray->stop();
+    }
+
     // Evacuating from lennart's botnet to XDG (a.k.a. 'the spec that nobody actually follows').
     // TODO: Remove all this garbage related to systemd in 1-2 months and remove the systemd service file as well.
     // This garbage shit is needed because the systemd user daemon isn't always available at xdg autostart o algo
     const bool systemd_service_ready = gsr::wait_until_systemd_user_service_available();
-    constexpr const char *deprecated_systemd_service_name = "gpu-screen-recorder-ui.service";
+    constexpr const char *deprecated_systemd_service_name = "sourisgsr.service";
     if(systemd_service_ready && gsr::is_systemd_service_enabled(deprecated_systemd_service_name)) {
         const int autostart_result = gsr::set_xdg_autostart(true);
         if(autostart_result == 67) {
             const bool is_flatpak = getenv("FLATPAK_ID") != nullptr;
-            const char *startup_command = is_flatpak ? "flatpak run com.dec05eba.gpu_screen_recorder gsr-ui" : "gsr-ui launch-daemon";
+            const char *startup_command = is_flatpak ? "flatpak run com.sourisgsr.recorder sgsr-ui" : "sgsr-ui launch-daemon";
             overlay->show_notification(
                 TRF("GPU Screen Recorder UI autostart via systemd is deprecated. To migrate: install and configure 'dex' (recommended), or manually add '%s' to your desktop autostart entries.", startup_command).c_str(),
                 10.0, mgl::Color(255, 255, 255), mgl::Color(255, 0, 0),
@@ -339,6 +350,7 @@ int main(int argc, char **argv) {
     const bool connected_to_display_server = mgl_is_connected_to_display_server();
 
     fprintf(stderr, "Info: shutting down!\n");
+    tray->stop();
     rpc.reset();
     overlay.reset();
     mgl_deinit();
@@ -349,7 +361,7 @@ int main(int argc, char **argv) {
 
     if(exit_reason == "back-to-old-ui") {
         gsr::set_xdg_autostart(false);
-        const char *args[] = { "gpu-screen-recorder-gtk", "use-old-ui", nullptr };
+        const char *args[] = { "sgsr-gtk", "use-old-ui", nullptr };
         execvp(args[0], (char* const*)args);
         return 0;
     } else if(exit_reason == "exit") {

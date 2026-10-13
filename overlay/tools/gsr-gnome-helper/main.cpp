@@ -11,13 +11,13 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-static const char *EXTENSION_UUID = "gpu-screen-recorder@dec05eba.com";
+static const char *EXTENSION_UUID = "sourisgsr@sourisgsr";
 
 static const char *INTROSPECTION_XML =
     "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
     "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
     "<node>\n"
-    "  <interface name='com.dec05eba.gpu_screen_recorder'>\n"
+    "  <interface name='com.sourisgsr.recorder'>\n"
     "    <method name='updateActiveWindow'>\n"
     "      <arg type='s' name='title' direction='in'/>\n"
     "      <arg type='b' name='fullscreen' direction='in'/>\n"
@@ -169,7 +169,7 @@ public:
             return false;
         }
 
-        const int ret = dbus_bus_request_name(connection, "com.dec05eba.gpu_screen_recorder",
+        const int ret = dbus_bus_request_name(connection, "com.sourisgsr.recorder",
                                               DBUS_NAME_FLAG_REPLACE_EXISTING, &err);
         if(dbus_error_is_set(&err)) {
             std::cerr << "Error: gsr-gnome-helper: failed to request name: " << err.message << "\n";
@@ -181,13 +181,13 @@ public:
             return false;
         }
 
-        std::cerr << "Info: gsr-gnome-helper: DBus server initialized on com.dec05eba.gpu_screen_recorder\n";
+        std::cerr << "Info: gsr-gnome-helper: DBus server initialized on com.sourisgsr.recorder\n";
 
         const bool inside_flatpak = access("/app/manifest.json", F_OK) == 0;
         const char *source_dir =
             !inside_flatpak
             ? GNOME_EXTENSION_SOURCE_DIR
-            : "/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/share/gsr-ui/gnome-extension";
+            : "/var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/share/sgsr-ui/gnome-extension";
 
         const bool installed = inside_flatpak
             ? install_extension_via_host(source_dir)
@@ -284,7 +284,7 @@ public:
 
             if(dbus_message_is_method_call(msg, "org.freedesktop.DBus.Introspectable", "Introspect")) {
                 handle_introspect(msg);
-            } else if(dbus_message_is_method_call(msg, "com.dec05eba.gpu_screen_recorder", "updateActiveWindow")) {
+            } else if(dbus_message_is_method_call(msg, "com.sourisgsr.recorder", "updateActiveWindow")) {
                 handle_update_active_window(msg);
             }
 
@@ -404,7 +404,7 @@ public:
     }
 
     void send_error_reply(DBusMessage *msg, const char *error_msg) {
-        DBusMessage *reply = dbus_message_new_error(msg, "com.dec05eba.gpu_screen_recorder.Error", error_msg);
+        DBusMessage *reply = dbus_message_new_error(msg, "com.sourisgsr.recorder.Error", error_msg);
         if(reply) {
             dbus_connection_send(connection, reply, nullptr);
             dbus_connection_flush(connection);
@@ -414,7 +414,7 @@ public:
 
     ~GsrGnomeHelper() {
         if(connection) {
-            dbus_bus_release_name(connection, "com.dec05eba.gpu_screen_recorder", nullptr);
+            dbus_bus_release_name(connection, "com.sourisgsr.recorder", nullptr);
             dbus_connection_unref(connection);
         }
     }

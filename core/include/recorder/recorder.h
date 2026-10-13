@@ -53,6 +53,8 @@ void gsr_recorder_set_paused(gsr_recorder *self, bool paused);
 /* SourisGSR: live update of recording-only volumes 0-100 (OBS style).
    Thread-safe, never touches the system mixer. */
 void gsr_recorder_set_volumes(gsr_recorder *self, int mic_volume_percent, int system_volume_percent, int app_volume_percent);
+/* SourisGSR VU 0.0-1.0 peak (thread-safe). 0 when no audio. */
+float gsr_recorder_get_audio_level(const gsr_recorder *self);
 void gsr_recorder_toggle_replay_recording(gsr_recorder *self);
 /* Does nothing when a recording is already running */
 void gsr_recorder_start_replay_recording(gsr_recorder *self);

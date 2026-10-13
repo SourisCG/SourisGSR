@@ -146,7 +146,7 @@ namespace gsr {
 
         DIR *d = opendir(path);
         if(!d) {
-            fprintf(stderr, "gsr-ui error: failed to open directory: %s, error: %s\n", path, strerror(errno));
+            fprintf(stderr, "sgsr-ui error: failed to open directory: %s, error: %s\n", path, strerror(errno));
             return;
         }
 

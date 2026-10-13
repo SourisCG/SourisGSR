@@ -22,10 +22,10 @@ namespace gsr {
         }
 
         Window window = None;
-        focused_window.title = get_window_name_at_cursor_position(dpy, "gsr-ui", &window);
+        focused_window.title = get_window_name_at_cursor_position(dpy, "sgsr-ui", &window);
         if(focused_window.title.empty()) {
             window = None;
-            focused_window.title = get_focused_window_name(dpy, WindowCaptureType::FOCUSED, false, "gsr-ui", &window);
+            focused_window.title = get_focused_window_name(dpy, WindowCaptureType::FOCUSED, false, "sgsr-ui", &window);
         }
 
         if(window != None)

@@ -3,9 +3,9 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 
-const DAEMON_NAME = 'com.dec05eba.gpu_screen_recorder';
+const DAEMON_NAME = 'com.sourisgsr.recorder';
 const DAEMON_PATH = '/';
-const DAEMON_INTERFACE = 'com.dec05eba.gpu_screen_recorder';
+const DAEMON_INTERFACE = 'com.sourisgsr.recorder';
 
 export default class GsrFocusedWindowExtension extends Extension {
     enable() {
@@ -20,7 +20,7 @@ export default class GsrFocusedWindowExtension extends Extension {
         this._focusSignalId = this._display.connect('notify::focus-window', () => this._onFocusChanged());
         this._onFocusChanged();
 
-        // Whenever the helper's bus name appears (e.g. gsr-ui starts), forget
+        // Whenever the helper's bus name appears (e.g. sgsr-ui starts), forget
         // the cached state and re-emit so the helper gets the current title
         // immediately rather than only after the next focus/title change.
         this._helperWatchId = Gio.bus_watch_name(
@@ -85,7 +85,7 @@ export default class GsrFocusedWindowExtension extends Extension {
         if (!window) return false;
         const wmClass = window.get_wm_class() || '';
         const wmInst = window.get_wm_class_instance() || '';
-        if (wmClass === 'gsr-ui' || wmInst === 'gsr-ui') return true;
+        if (wmClass === 'sgsr-ui' || wmInst === 'sgsr-ui') return true;
         if (wmClass === 'gsr-notify' || wmInst === 'gsr-notify') return true;
         return false;
     }

@@ -155,14 +155,14 @@ namespace gsr {
             }
 
             if(inside_flatpak) {
-                const char *args[] = { "flatpak-spawn", "--host", "/var/lib/flatpak/app/com.dec05eba.gpu_screen_recorder/current/active/files/bin/kms-server-proxy", "launch-gsr-global-hotkeys", user_homepath, grab_type_arg, nullptr };
+                const char *args[] = { "flatpak-spawn", "--host", "/var/lib/flatpak/app/com.sourisgsr.recorder/current/active/files/bin/kms-server-proxy", "launch-sgsr-global-hotkeys", user_homepath, grab_type_arg, nullptr };
                 execvp(args[0], (char* const*)args);
             } else {
-                const char *args[] = { "gsr-global-hotkeys", grab_type_arg, nullptr };
+                const char *args[] = { "sgsr-global-hotkeys", grab_type_arg, nullptr };
                 execvp(args[0], (char* const*)args);
             }
 
-            perror("gsr-global-hotkeys");
+            perror("sgsr-global-hotkeys");
             _exit(127);
         } else { /* parent */
             process_id = pid;
@@ -276,7 +276,7 @@ namespace gsr {
             auto it = bound_actions_by_id.find(action);
             if(it != bound_actions_by_id.end())
                 it->second(action);
-            else if(on_gsr_ui_virtual_keyboard_grabbed && action == "gsr-ui-virtual-keyboard-grabbed")
+            else if(on_gsr_ui_virtual_keyboard_grabbed && action == "sgsr-ui-virtual-keyboard-grabbed")
                 on_gsr_ui_virtual_keyboard_grabbed();
         }
     }

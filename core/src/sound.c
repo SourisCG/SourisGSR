@@ -636,7 +636,7 @@ static void get_pulseaudio_default_inputs(gsr_audio_devices *audio_devices) {
     if(!main_loop)
         return;
 
-    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "gpu-screen-recorder");
+    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "sourisgsr");
     if(pa_context_connect(ctx, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
         goto done;
 
@@ -686,7 +686,7 @@ void get_pulseaudio_inputs(gsr_audio_devices *audio_devices) {
     if(!main_loop)
         return;
 
-    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "gpu-screen-recorder");
+    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "sourisgsr");
     if(pa_context_connect(ctx, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
         goto done;
 
@@ -743,7 +743,7 @@ bool pulseaudio_server_is_pipewire(void) {
     if(!main_loop)
         return is_server_pipewire;
 
-    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "gpu-screen-recorder");
+    pa_context *ctx = pa_context_new(pa_mainloop_get_api(main_loop), "sourisgsr");
     if(pa_context_connect(ctx, NULL, PA_CONTEXT_NOFLAGS, NULL) < 0)
         goto done;
 

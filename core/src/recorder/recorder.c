@@ -354,7 +354,7 @@ static int recorder_setup_audio_track(gsr_recorder *self, const gsr_merged_audio
     if(gsr_audio_inputs_has_app_audio(merged_audio_inputs)) {
         assert(!use_amix);
 #ifdef GSR_APP_AUDIO
-        return gsr_audio_track_init_application_input(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, self->pipewire_audio, self->settings.app_volume_percent);
+        return gsr_audio_track_init_application_input(audio_track, merged_audio_inputs, audio_track->codec_context, num_channels, num_audio_frames_shift, self->pipewire_audio, self->settings.mic_volume_percent, self->settings.system_volume_percent, self->settings.app_volume_percent);
 #else
         return GSR_ERROR_UNSUPPORTED;
 #endif
@@ -1003,6 +1003,12 @@ void gsr_recorder_set_volumes(gsr_recorder *self, int mic_volume_percent, int sy
                                                                    mic_volume_percent, system_volume_percent, app_volume_percent));
         }
     }
+}
+
+float gsr_recorder_get_audio_level(const gsr_recorder *self) {
+    if(!self)
+        return 0.0f;
+    return gsr_audio_capture_get_level(&self->audio_capture);
 }
 
 void gsr_recorder_toggle_replay_recording(gsr_recorder *self) {

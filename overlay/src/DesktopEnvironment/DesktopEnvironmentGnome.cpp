@@ -25,10 +25,10 @@ namespace gsr {
             return false;
         }
 
-        const char *args[] = { "gsr-gnome-helper", NULL };
+        const char *args[] = { "sgsr-gnome-helper", NULL };
         process_id = exec_program(args, &read_fd, false);
         if(process_id == -1) {
-            fprintf(stderr, "Error: DesktopEnvironmentGnome: failed to execute gsr-gnome-helper\n");
+            fprintf(stderr, "Error: DesktopEnvironmentGnome: failed to execute sgsr-gnome-helper\n");
             return false;
         }
 
@@ -99,10 +99,10 @@ namespace gsr {
             return focused_window;
 
         Window window = None;
-        focused_window.title = get_window_name_at_cursor_position(x11_dpy, "gsr-ui", &window);
+        focused_window.title = get_window_name_at_cursor_position(x11_dpy, "sgsr-ui", &window);
         if(focused_window.title.empty()) {
             window = None;
-            focused_window.title = get_focused_window_name(x11_dpy, WindowCaptureType::FOCUSED, false, "gsr-ui", &window);
+            focused_window.title = get_focused_window_name(x11_dpy, WindowCaptureType::FOCUSED, false, "sgsr-ui", &window);
         }
 
         if(window != None)

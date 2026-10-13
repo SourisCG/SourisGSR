@@ -16,7 +16,7 @@
 
 namespace gsr {
     static void debug_print_args(const char **args) {
-        fprintf(stderr, "gsr-ui info: running command:");
+        fprintf(stderr, "sgsr-ui info: running command:");
         while(*args) {
             fprintf(stderr, " %s", *args);
             ++args;

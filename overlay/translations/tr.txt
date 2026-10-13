@@ -96,10 +96,10 @@ Stopped capture because the user canceled the desktop portal=Kullanıcı masaüs
 Failed to take a screenshot. Verify if settings are correct=Ekran görüntüsü alınamadı. Ayarların doğru olduğunu doğrulayın
 
 # Launch errors
-Failed to launch gpu-screen-recorder to start replay=Yeniden oynatmayı başlatmak için gpu-screen-recorder çalıştırılamadı
-Failed to launch gpu-screen-recorder to start recording=Kaydı başlatmak için gpu-screen-recorder çalıştırılamadı
-Failed to launch gpu-screen-recorder to start streaming=Yayını başlatmak için gpu-screen-recorder çalıştırılamadı
-Failed to launch gpu-screen-recorder to take a screenshot=Ekran görüntüsü almak için gpu-screen-recorder çalıştırılamadı
+Failed to launch sgsr to start replay=Yeniden oynatmayı başlatmak için sgsr çalıştırılamadı
+Failed to launch sgsr to start recording=Kaydı başlatmak için sgsr çalıştırılamadı
+Failed to launch sgsr to start streaming=Yayını başlatmak için sgsr çalıştırılamadı
+Failed to launch sgsr to take a screenshot=Ekran görüntüsü almak için sgsr çalıştırılamadı
 
 # System startup notifications
 Failed to add GPU Screen Recorder to system startup=GPU Screen Recorder sistem başlangıcına eklenemedi

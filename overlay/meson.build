@@ -1,4 +1,4 @@
-project('gsr-ui', ['c', 'cpp'], version : '1.14.0', default_options : ['warning_level=2', 'cpp_std=c++17'], subproject_dir : 'depends')
+project('sgsr-ui', ['c', 'cpp'], version : '1.14.0', default_options : ['warning_level=2', 'cpp_std=c++17'], subproject_dir : 'depends')
 
 add_project_arguments('-D_FILE_OFFSET_BITS=64', language : ['c', 'cpp'])
 
@@ -24,6 +24,7 @@ src = [
     'src/gui/List.cpp',
     'src/gui/Utils.cpp',
     'src/gui/DropdownButton.cpp',
+    'src/gui/Slider.cpp',
     'src/gui/Label.cpp',
     'src/gui/Image.cpp',
     'src/gui/LineSeparator.cpp',
@@ -35,6 +36,7 @@ src = [
     'src/gui/GsrPage.cpp',
     'src/gui/Subsection.cpp',
     'src/gui/Tooltip.cpp',
+    'src/TrayIcon.cpp',
     'src/GlobalHotkeys/GlobalHotkeysX11.cpp',
     'src/GlobalHotkeys/GlobalHotkeysLinux.cpp',
     'src/GlobalHotkeys/GlobalHotkeysJoystick.cpp',
@@ -76,7 +78,7 @@ mglpp_dep = mglpp_proj.get_variable('mglpp_dep')
 
 prefix = get_option('prefix')
 datadir = get_option('datadir')
-gsr_ui_resources_path = join_paths(prefix, datadir, 'gsr-ui')
+gsr_ui_resources_path = join_paths(prefix, datadir, 'sgsr-ui')
 icons_path = join_paths(prefix, datadir, 'icons')
 
 add_project_arguments('-DGSR_UI_VERSION="' + meson.project_version() + '"', language: ['c', 'cpp'])
@@ -100,13 +102,15 @@ executable(
         dependency('xrandr'),
         dependency('libpulse-simple'),
         dependency('libdrm'),
+        dependency('dbus-1'),
+        dependency('gio-2.0'),
         dependency('wayland-client'),
     ],
     cpp_args : '-DGSR_UI_RESOURCES_PATH="' + gsr_ui_resources_path + '"',
 )
 
 executable(
-    'gsr-global-hotkeys',
+    'sgsr-global-hotkeys',
     [
         'tools/gsr-global-hotkeys/hotplug.c',
         'tools/gsr-global-hotkeys/keyboard_event.c',
@@ -119,7 +123,7 @@ executable(
 )
 
 executable(
-    'gsr-ui-cli',
+    'sgsr-ui-cli',
     [
         'tools/gsr-ui-cli/main.c'
     ],
@@ -127,7 +131,7 @@ executable(
 )
 
 executable(
-    'gsr-wayland-bridge',
+    'sgsr-wayland-bridge',
     [
         'tools/gsr-wayland-bridge/main.c'
     ],
@@ -135,7 +139,7 @@ executable(
 )
 
 executable(
-    'gsr-kwin-helper',
+    'sgsr-kwin-helper',
     [
         'tools/gsr-kwin-helper/main.cpp'
     ],
@@ -146,7 +150,7 @@ executable(
 )
 
 executable(
-    'gsr-gnome-helper',
+    'sgsr-gnome-helper',
     [
         'tools/gsr-gnome-helper/main.cpp'
     ],
@@ -157,7 +161,7 @@ executable(
 )
 
 executable(
-    'gsr-game-tracker',
+    'sgsr-game-tracker',
     [
         'tools/gsr-game-tracker/native_games.c',
         'tools/gsr-game-tracker/game_name.c',
@@ -181,10 +185,10 @@ install_data(
 
 install_subdir('images', install_dir : gsr_ui_resources_path)
 install_subdir('translations', install_dir : gsr_ui_resources_path)
-install_man('gsr-ui.1', 'gsr-ui-cli.1')
+install_man('sgsr-ui.1', 'sgsr-ui-cli.1')
 
 if get_option('desktop-files') == true
-    install_data(files('gpu-screen-recorder.desktop'), install_dir : join_paths(prefix, datadir, 'applications'))
+    install_data(files('sourisgsr.desktop'), install_dir : join_paths(prefix, datadir, 'applications'))
     install_subdir('icons/hicolor', install_dir : icons_path)
 
     gnome = import('gnome')

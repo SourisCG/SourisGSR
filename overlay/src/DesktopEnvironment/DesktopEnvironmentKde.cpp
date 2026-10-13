@@ -21,10 +21,10 @@ namespace gsr {
             return false;
         }
 
-        const char *args[] = { "gsr-kwin-helper", NULL };
+        const char *args[] = { "sgsr-kwin-helper", NULL };
         process_id = exec_program(args, &read_fd, false);
         if(process_id == -1) {
-            fprintf(stderr, "Error: DesktopEnvironmentKde: failed to execute gsr-kwin-helper\n");
+            fprintf(stderr, "Error: DesktopEnvironmentKde: failed to execute sgsr-kwin-helper\n");
             return false;
         }
 

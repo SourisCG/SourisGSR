@@ -22,12 +22,18 @@ extern "C" {
 float souris_volume_percent_to_gain(int percent);
 
 /* Apply gain to interleaved buffers. nb_samples = per channel. */
+void souris_gain_apply_u8(uint8_t *samples, size_t nb_samples_total, float gain);
 void souris_gain_apply_s16(int16_t *samples, size_t nb_samples_total, float gain);
 void souris_gain_apply_s32(int32_t *samples, size_t nb_samples_total, float gain);
+void souris_gain_apply_s64(int64_t *samples, size_t nb_samples_total, float gain);
 void souris_gain_apply_flt(float *samples, size_t nb_samples_total, float gain);
+void souris_gain_apply_dbl(double *samples, size_t nb_samples_total, float gain);
 
 /* Planar float (AV_SAMPLE_FMT_FLTP): data[ch] with nb_samples each. */
 void souris_gain_apply_fltp(float **data, int nb_channels, int nb_samples, float gain);
+void souris_gain_apply_dblp(double **data, int nb_channels, int nb_samples, float gain);
+void souris_gain_apply_s16p(int16_t **data, int nb_channels, int nb_samples, float gain);
+void souris_gain_apply_s32p(int32_t **data, int nb_channels, int nb_samples, float gain);
 
 /* Resolve the effective gain for one input.
    - If has_custom_volume: use custom_volume (0.0-1.0, from vol=NN).

@@ -71,12 +71,12 @@ namespace gsr {
 
             const int number = parse_u8(str.data() + index, next_index - index);
             if(number == -1) {
-                fprintf(stderr, "Error: gpu-screen-recorder --info contains invalid gsr version: %.*s\n", (int)str.size(), str.data());
+                fprintf(stderr, "Error: sgsr --info contains invalid gsr version: %.*s\n", (int)str.size(), str.data());
                 return {0, 0, 0};
             }
 
             if(number_index >= 3) {
-                fprintf(stderr, "Error: gpu-screen-recorder --info contains invalid gsr version: %.*s\n", (int)str.size(), str.data());
+                fprintf(stderr, "Error: sgsr --info contains invalid gsr version: %.*s\n", (int)str.size(), str.data());
                 return {0, 0, 0};
             }
 
@@ -201,7 +201,7 @@ namespace gsr {
         *gsr_info = GsrInfo{};
 
         std::string stdout_str;
-        const char *args[] = { "gpu-screen-recorder", "--info", nullptr };
+        const char *args[] = { "sgsr", "--info", nullptr };
         const int exit_status = exec_program_get_stdout(args, stdout_str);
         switch(exit_status) {
             case 0:  break;
@@ -282,9 +282,9 @@ namespace gsr {
         std::vector<AudioDevice> audio_devices;
 
         std::string stdout_str;
-        const char *args[] = { "gpu-screen-recorder", "--list-audio-devices", nullptr };
+        const char *args[] = { "sgsr", "--list-audio-devices", nullptr };
         if(exec_program_get_stdout(args, stdout_str, false) != 0) {
-            fprintf(stderr, "error: 'gpu-screen-recorder --list-audio-devices' failed\n");
+            fprintf(stderr, "error: 'sgsr --list-audio-devices' failed\n");
             return audio_devices;
         }
 
@@ -302,9 +302,9 @@ namespace gsr {
         std::vector<std::string> application_audio;
 
         std::string stdout_str;
-        const char *args[] = { "gpu-screen-recorder", "--list-application-audio", nullptr };
+        const char *args[] = { "sgsr", "--list-application-audio", nullptr };
         if(exec_program_get_stdout(args, stdout_str) != 0) {
-            fprintf(stderr, "error: 'gpu-screen-recorder --list-application-audio' failed\n");
+            fprintf(stderr, "error: 'sgsr --list-application-audio' failed\n");
             return application_audio;
         }
 
@@ -449,9 +449,9 @@ namespace gsr {
         SupportedCaptureOptions capture_options;
 
         std::string stdout_str;
-        const char *args[] = { "gpu-screen-recorder", "--list-capture-options", gsr_info.gpu_info.card_path.c_str(), gpu_vendor_to_string(gsr_info.gpu_info.vendor), nullptr };
+        const char *args[] = { "sgsr", "--list-capture-options", gsr_info.gpu_info.card_path.c_str(), gpu_vendor_to_string(gsr_info.gpu_info.vendor), nullptr };
         if(exec_program_get_stdout(args, stdout_str) != 0) {
-            fprintf(stderr, "error: 'gpu-screen-recorder --list-capture-options' failed\n");
+            fprintf(stderr, "error: 'sgsr --list-capture-options' failed\n");
             return capture_options;
         }
 
@@ -467,9 +467,9 @@ namespace gsr {
         std::vector<GsrCamera> cameras;
 
         std::string stdout_str;
-        const char *args[] = { "gpu-screen-recorder", "--list-v4l2-devices", nullptr };
+        const char *args[] = { "sgsr", "--list-v4l2-devices", nullptr };
         if(exec_program_get_stdout(args, stdout_str) != 0) {
-            fprintf(stderr, "error: 'gpu-screen-recorder --list-v4l2-devices' failed\n");
+            fprintf(stderr, "error: 'sgsr --list-v4l2-devices' failed\n");
             return cameras;
         }
 

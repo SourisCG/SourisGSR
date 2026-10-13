@@ -201,6 +201,21 @@ static bool ipc_save_replay_handler(int seconds, bool has_restart_replay, bool r
     return true;
 }
 
+static bool ipc_set_volumes_handler(int mic_volume, int system_volume, int app_volume, char *error_message, size_t error_message_size, void *userdata) {
+    (void)userdata;
+    if(mic_volume < 0 || mic_volume > 100 || system_volume < 0 || system_volume > 100 || app_volume < 0 || app_volume > 100) {
+        snprintf(error_message, error_message_size, "volumes must be 0-100");
+        return false;
+    }
+    if(!recorder) {
+        snprintf(error_message, error_message_size, "recorder not running");
+        return false;
+    }
+    /* Recording only: never touches the system mixer. */
+    gsr_recorder_set_volumes(recorder, mic_volume, system_volume, app_volume);
+    return true;
+}
+
 static void install_signal_handlers(void) {
     signal(SIGINT, stop_handler);
     signal(SIGTERM, stop_handler);
@@ -492,6 +507,7 @@ static int record(args_parser *arg_parser, gsr_windowing *windowing, gsr_capture
     ipc_handlers.start_replay_recording = ipc_start_replay_recording_handler;
     ipc_handlers.stop_replay_recording = ipc_stop_replay_recording_handler;
     ipc_handlers.save_replay = ipc_save_replay_handler;
+    ipc_handlers.set_volumes = ipc_set_volumes_handler;
     ipc_handlers.userdata = &arg_parser->settings;
 
     int run_result = gsr_ipc_start(ipc, &ipc_handlers);

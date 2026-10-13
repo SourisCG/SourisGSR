@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=SourisGSR
+GenericName=Screen recorder
+GenericName[hu]=Képernyőrögzítő
+Comment=A ShadowPlay-like screen recorder for Linux
+Comment[hu]=ShadowPlay-szerű képernyőrögzítő Linuxra
+Icon=sourisgsr
+Exec=sgsr-ui launch-hide-announce
+Terminal=false
+Keywords=sourisgsr;sgsr-ui;screen recorder;streaming;twitch;replay;shadowplay;
+Keywords[hu]=sourisgsr;sgsr-ui;képernyőrögzítő;streamelés;közvetítés;twitch;visszajátszás;shadowplay;
+Categories=AudioVideo;Recorder;

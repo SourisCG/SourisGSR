@@ -38,7 +38,7 @@ namespace gsr {
     // of "." if there is no parent directory and the directory path is relative
     std::string get_parent_directory(std::string_view directory);
 
-    // XDG Autostart helpers — toggle ~/.config/autostart/gpu-screen-recorder-ui.desktop
+    // XDG Autostart helpers — toggle ~/.config/autostart/sgsr-ui.desktop
     bool is_xdg_autostart_enabled();
     // Returns 0 on success
     int set_xdg_autostart(bool enable);

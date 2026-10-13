@@ -69,6 +69,8 @@ struct gsr_audio_capture {
     gsr_encoder *encoder;
     gsr_recording_clock *clock;
     const atomic_int *running;
+    /* SourisGSR VU meter 0.0-1.0 (peak of last captured frame, recording gain applied). */
+    _Atomic float level;
 };
 
 /* Returns a |gsr_error| value */
@@ -76,6 +78,8 @@ int gsr_audio_capture_init(gsr_audio_capture *self, gsr_encoder *encoder, gsr_re
 void gsr_audio_capture_deinit(gsr_audio_capture *self);
 
 bool gsr_audio_capture_add_track(gsr_audio_capture *self, const gsr_audio_track *track);
+/* SourisGSR VU 0.0-1.0 peak (thread-safe). 0 when no audio yet. */
+float gsr_audio_capture_get_level(const gsr_audio_capture *self);
 /* Allocates the silence buffer and starts one thread per audio device, plus the amix thread when |uses_amix| is set */
 int gsr_audio_capture_start(gsr_audio_capture *self, int audio_max_frame_size, bool uses_amix);
 void gsr_audio_capture_join_threads(gsr_audio_capture *self);
@@ -90,8 +94,13 @@ int gsr_audio_init_filter_graph(AVCodecContext *audio_codec_context, AVFilterGra
    mic/system/app_percent: 0-100, recording-only gain (not system). */
 int gsr_audio_track_init_device_inputs(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, AVFilterContext **src_filter_ctx, bool use_amix, int mic_volume_percent, int system_volume_percent, int app_volume_percent);
 #ifdef GSR_APP_AUDIO
-/* Returns a |gsr_error| value. Creates a combined sink that application audio is routed to */
-int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int app_volume_percent);
+/* Returns a |gsr_error| value. Creates a combined sink that application audio is routed to.
+   Combined sink mixes upstream in PipeWire, so per-source separation is impossible:
+   if every app member carries the same custom vol= it is honored for the whole
+   sink (stored as has_custom_volume so live set_volumes preserves it);
+   mixed customs fall back to app_volume_percent with a warning. Device members
+   linked into the same sink share the same gain (warned). */
+int gsr_audio_track_init_application_input(gsr_audio_track *self, const gsr_merged_audio_inputs *merged_audio_inputs, AVCodecContext *audio_codec_context, int num_channels, double num_audio_frames_shift, gsr_pipewire_audio *pipewire_audio, int mic_volume_percent, int system_volume_percent, int app_volume_percent);
 #endif
 void gsr_audio_track_deinit(gsr_audio_track *self);
 

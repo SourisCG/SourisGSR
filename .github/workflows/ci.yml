@@ -31,10 +31,23 @@ jobs:
         run: meson setup /tmp/build-core -Dcapabilities=false -Dsystemd=false
       - name: Build
         run: meson compile -C /tmp/build-core
+      - name: Unit tests (gain)
+        run: meson test -C /tmp/build-core --print-errorlogs
       - name: Smoke test CLI flags
         run: |
           /tmp/build-core/gpu-screen-recorder --help | grep -q "mic-volume"
+          /tmp/build-core/gpu-screen-recorder --help | grep -q "system-volume"
+          /tmp/build-core/gpu-screen-recorder --help | grep -q "app-volume"
           /tmp/build-core/gpu-screen-recorder --list-audio-devices | grep -q "default_output"
+      - name: Archive libsouris_gsr for SDK
+        run: |
+          ./tools/archive_libsouris.sh /tmp/build-core /tmp/sgsr-native
+          ls -lh /tmp/sgsr-native/libsouris_gsr.a
+      - name: E2E volumes (best-effort, SKIP without audio server)
+        run: |
+          sudo apt-get install -y ffmpeg pulseaudio-utils || true
+          export PATH="/tmp/build-core:$PATH"
+          ./tools/test_volumes_e2e.sh || echo "E2E volumes not runnable here (see SKIP above)"
 
   linux-overlay:
     name: Linux overlay UI
@@ -65,12 +78,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install meson + core deps (for libsouris_gsr link)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build pkg-config gcc meson \
+            libx11-dev libxcomposite-dev libxrandr-dev libxfixes-dev \
+            libxdamage-dev libpulse-dev libva-dev libdrm-dev \
+            libcap-dev libwayland-dev wayland-protocols \
+            libdbus-1-dev libpipewire-0.3-dev libspa-0.2-dev \
+            libavcodec-dev libavformat-dev libavutil-dev \
+            libswresample-dev libavfilter-dev \
+            libglvnd-dev linux-libc-dev
       - name: Unit tests (no engine link)
         working-directory: sdk/rust
         run: cargo test -p souris-gsr-sdk
       - name: FFI typecheck (no linking)
         working-directory: sdk/rust
         run: cargo check --features ffi -p souris-gsr-sdk
+      - name: FFI link + engine tests (libsouris_gsr)
+        run: |
+          ./tools/archive_libsouris.sh /tmp/build-sdk-core /tmp/sgsr-native
+          SOURIS_GSR_LIB_DIR=/tmp/sgsr-native cargo test --features ffi -p souris-gsr-sdk --manifest-path sdk/rust/Cargo.toml
 
   windows-core:
     name: Windows core (WGC/WASAPI base)

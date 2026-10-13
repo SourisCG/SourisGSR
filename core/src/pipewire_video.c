@@ -655,7 +655,7 @@ static bool gsr_pipewire_video_setup_stream(gsr_pipewire_video *self) {
         goto error;
     }
 
-    self->stream = pw_stream_new(self->core, "com.dec05eba.gpu_screen_recorder",
+    self->stream = pw_stream_new(self->core, "com.sourisgsr.recorder",
         pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
                           PW_KEY_MEDIA_CATEGORY, "Capture",
                           PW_KEY_MEDIA_ROLE, "Screen", NULL));

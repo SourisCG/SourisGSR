@@ -1,4 +1,4 @@
-const DAEMON_DBUS_NAME = "com.dec05eba.gpu_screen_recorder";
+const DAEMON_DBUS_NAME = "com.sourisgsr.recorder";
 
 function dbusSendUpdateActiveWindow(title, isFullscreen, monitorName, pid) {
     callDBus(
@@ -74,7 +74,7 @@ function subscribeToWindow(window) {
 function updateActiveWindow(window) {
     if (!window) return;
     if (!window.normalWindow) return;
-    if (window.resourceName === "gsr-ui" || window.resourceName === "gsr-notify") return; // ignore the overlay and notification
+    if (window.resourceName === "sgsr-ui" || window.resourceName === "gsr-notify") return; // ignore the overlay and notification
     if (window.resourceClass === "org.kde.spectacle") return;
     emitActiveWindowUpdate(window);
     subscribeToWindow(window);

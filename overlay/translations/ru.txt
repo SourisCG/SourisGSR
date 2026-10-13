@@ -96,10 +96,10 @@ Stopped capture because the user canceled the desktop portal=Захват ост
 Failed to take a screenshot. Verify if settings are correct=Не удалось сделать снимок экрана. Проверьте правильность настроек
 
 # Launch errors
-Failed to launch gpu-screen-recorder to start replay=Не удалось запустить gpu-screen-recorder для начала повтора
-Failed to launch gpu-screen-recorder to start recording=Не удалось запустить gpu-screen-recorder для начала записи
-Failed to launch gpu-screen-recorder to start streaming=Не удалось запустить gpu-screen-recorder для начала трансляции
-Failed to launch gpu-screen-recorder to take a screenshot=Не удалось запустить gpu-screen-recorder для снимка экрана
+Failed to launch sgsr to start replay=Не удалось запустить sgsr для начала повтора
+Failed to launch sgsr to start recording=Не удалось запустить sgsr для начала записи
+Failed to launch sgsr to start streaming=Не удалось запустить sgsr для начала трансляции
+Failed to launch sgsr to take a screenshot=Не удалось запустить sgsr для снимка экрана
 
 # System startup notifications
 Failed to add GPU Screen Recorder to system startup=Не удалось добавить GPU Screen Recorder в автозагрузку системы

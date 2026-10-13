@@ -13,6 +13,7 @@
 #include "../include/recorder/capture_setup.h"
 #include "../include/recorder/audio_input.h"
 #include "../include/recorder/windowing.h"
+#include "../include/window/window.h"
 #include "../include/recorder/screenshot.h"
 #include "../include/recorder/replay_save.h"
 #include "../include/sound.h"
@@ -27,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <limits.h>
@@ -47,6 +49,7 @@ struct sgsr_recorder {
     char *container;
     char *replay_dir;
     char *capture_str;
+    char *portal_token_path;
     char **audio_strs;
     int num_audio_strs;
     char pending_save_path[PATH_MAX];
@@ -70,6 +73,9 @@ struct sgsr_recorder {
     gsr_recorder *rec;
     pthread_t thread;
     bool thread_started;
+    pthread_t level_thread;
+    bool level_started;
+    atomic_int level_running;
     atomic_int state;
     pthread_mutex_t screenshot_mutex;
 
@@ -78,7 +84,27 @@ struct sgsr_recorder {
     int app_volume_percent;
 };
 
-const char* sgsr_version(void) { return "0.2.0-souris"; }
+static void* sgsr_level_thread(void *ud) {
+    sgsr_recorder *r = ud;
+    float last = -1.0f;
+    while(atomic_load(&r->level_running)) {
+        float lvl = 0.0f;
+        if(r->rec && atomic_load(&r->state) == SGSR_STATE_RECORDING)
+            lvl = gsr_recorder_get_audio_level(r->rec);
+        if(r->on_event && (fabsf(lvl - last) > 0.02f)) {
+            sgsr_event ev;
+            memset(&ev, 0, sizeof(ev));
+            ev.kind = SGSR_EVENT_LEVEL_METER;
+            ev.data0 = lvl;
+            r->on_event(&ev, r->event_userdata);
+            last = lvl;
+        }
+        usleep(100 * 1000);
+    }
+    return NULL;
+}
+
+const char* sgsr_version(void) { return "0.3.0-souris"; }
 int sgsr_api_version(void) { return SGSR_API_VERSION; }
 
 sgsr_error sgsr_init(void) { return SGSR_OK; }
@@ -180,9 +206,19 @@ static int sgsr_map_video_codec(const char *name) {
     return GSR_VIDEO_CODEC_AUTO;
 }
 
+static void sgsr_teardown(sgsr_recorder *r);
+static void sgsr_level_stop(sgsr_recorder *r) {
+    if(r && r->level_started) {
+        atomic_store(&r->level_running, 0);
+        pthread_join(r->level_thread, NULL);
+        r->level_started = false;
+    }
+}
+
 static void sgsr_teardown(sgsr_recorder *r) {
     if(!r)
         return;
+    sgsr_level_stop(r);
     if(r->thread_started) {
         pthread_join(r->thread, NULL);
         r->thread_started = false;
@@ -219,18 +255,69 @@ static void sgsr_teardown(sgsr_recorder *r) {
     }
 }
 
+typedef struct {
+    sgsr_source *list;
+    size_t capacity;
+    size_t count;
+} sgsr_enum_ctx;
+
+static void sgsr_enum_monitor_cb(const gsr_monitor *mon, void *ud) {
+    sgsr_enum_ctx *ctx = ud;
+    if(ctx->count >= ctx->capacity)
+        return;
+    sgsr_source *s = &ctx->list[ctx->count++];
+    memset(s, 0, sizeof(*s));
+    s->kind = SGSR_SOURCE_MONITOR;
+    snprintf(s->id, sizeof(s->id), "%.*s", mon->name_len, mon->name);
+    snprintf(s->title, sizeof(s->title), "%.*s %dx%d", mon->name_len, mon->name, mon->size.x, mon->size.y);
+    s->width = mon->size.x;
+    s->height = mon->size.y;
+}
+
 sgsr_error sgsr_enumerate_video_sources(sgsr_source **out, size_t *out_n) {
     if(!out || !out_n) return SGSR_ERR_INVALID_ARG;
-    sgsr_source *list = calloc(2, sizeof(sgsr_source));
+    /* Try real monitor enumeration via a lightweight windowing init.
+       Headless CI (no display) falls back to the generic stub. */
+    sgsr_source *list = calloc(32, sizeof(sgsr_source));
     if(!list) return SGSR_ERR_GENERIC;
-    list[0].kind = SGSR_SOURCE_MONITOR;
-    snprintf(list[0].id, sizeof(list[0].id), "screen");
-    snprintf(list[0].title, sizeof(list[0].title), "Primary monitor");
-    list[1].kind = SGSR_SOURCE_PORTAL;
-    snprintf(list[1].id, sizeof(list[1].id), "portal");
-    snprintf(list[1].title, sizeof(list[1].title), "Picker (portal/WGC)");
+    sgsr_enum_ctx ctx = { .list = list, .capacity = 30, .count = 0 };
+    bool have_real = false;
+    {
+        gsr_windowing w;
+        gsr_windowing_params wp;
+        memset(&wp, 0, sizeof(wp));
+        wp.monitor_capture = true;
+        if(gsr_windowing_init(&w, &wp) == GSR_ERROR_OK) {
+            gsr_connection_type ct = gsr_window_get_display_server(w.window) == GSR_DISPLAY_SERVER_X11
+                ? GSR_CONNECTION_X11 : GSR_CONNECTION_DRM;
+            for_each_active_monitor_output(w.window, NULL, ct, sgsr_enum_monitor_cb, &ctx);
+            have_real = ctx.count > 0;
+            gsr_windowing_deinit(&w);
+        }
+    }
+    if(!have_real) {
+        /* Stub: primary monitor + portal picker. */
+        memset(list, 0, sizeof(sgsr_source) * 32);
+        list[0].kind = SGSR_SOURCE_MONITOR;
+        snprintf(list[0].id, sizeof(list[0].id), "screen");
+        snprintf(list[0].title, sizeof(list[0].title), "Primary monitor");
+        list[1].kind = SGSR_SOURCE_PORTAL;
+        snprintf(list[1].id, sizeof(list[1].id), "portal");
+        snprintf(list[1].title, sizeof(list[1].title), "Picker (portal/WGC)");
+        *out = list;
+        *out_n = 2;
+        return SGSR_OK;
+    }
+    /* Append portal picker entry after real monitors. */
+    if(ctx.count < 32) {
+        sgsr_source *s = &list[ctx.count++];
+        memset(s, 0, sizeof(*s));
+        s->kind = SGSR_SOURCE_PORTAL;
+        snprintf(s->id, sizeof(s->id), "portal");
+        snprintf(s->title, sizeof(s->title), "Picker (portal/WGC)");
+    }
     *out = list;
-    *out_n = 2;
+    *out_n = ctx.count;
     return SGSR_OK;
 }
 
@@ -279,12 +366,12 @@ sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out) {
     if(config->mic_volume_percent < 0 || config->mic_volume_percent > 100) return SGSR_ERR_INVALID_ARG;
     if(config->system_volume_percent < 0 || config->system_volume_percent > 100) return SGSR_ERR_INVALID_ARG;
     if(config->app_volume_percent < 0 || config->app_volume_percent > 100) return SGSR_ERR_INVALID_ARG;
-    if(config->video_source.kind == SGSR_SOURCE_REGION) return SGSR_ERR_UNSUPPORTED;
     if(!config->output_path || !config->output_path[0]) return SGSR_ERR_INVALID_ARG;
 
     sgsr_recorder *r = calloc(1, sizeof(*r));
     if(!r) return SGSR_ERR_GENERIC;
     atomic_init(&r->state, SGSR_STATE_STOPPED);
+    atomic_init(&r->level_running, 0);
     if(pthread_mutex_init(&r->screenshot_mutex, NULL) != 0) {
         free(r);
         return SGSR_ERR_GENERIC;
@@ -319,6 +406,27 @@ sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out) {
         case SGSR_SOURCE_PORTAL:
             r->capture_str = strdup("portal");
             break;
+        case SGSR_SOURCE_REGION: {
+            /* CLI format WxH+X+Y, e.g. 800x600+100+100. */
+            if(config->video_source.width <= 0 || config->video_source.height <= 0) {
+                result = SGSR_ERR_INVALID_ARG;
+                goto fail;
+            }
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%dx%d+%d+%d",
+                config->video_source.width, config->video_source.height,
+                config->video_source.x, config->video_source.y);
+            r->capture_str = strdup(buf);
+            break;
+        }
+        case SGSR_SOURCE_FOCUSED:
+            /* Mirrors CLI -w focused: needs output size via width/height. */
+            if(config->video_source.width <= 0 || config->video_source.height <= 0) {
+                result = SGSR_ERR_INVALID_ARG;
+                goto fail;
+            }
+            r->capture_str = strdup("focused");
+            break;
         default:
             result = SGSR_ERR_UNSUPPORTED;
             goto fail;
@@ -340,6 +448,12 @@ sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out) {
     gsr_recorder_settings *s = &r->settings;
     memset(s, 0, sizeof(*s));
     gsr_recorder_settings_init_souris_volumes(s);
+    if(config->portal_session_token_path && config->portal_session_token_path[0]) {
+        r->portal_token_path = strdup(config->portal_session_token_path);
+        if(!r->portal_token_path) goto fail;
+        s->portal_session_token_filepath = r->portal_token_path;
+    }
+    s->restore_portal_session = config->restore_portal_session ? true : false;
     s->video_encoder = GSR_VIDEO_ENCODER_HW_GPU;
     s->pixel_format = GSR_PIXEL_FORMAT_YUV420;
     s->framerate_mode = GSR_FRAMERATE_MODE_VARIABLE;
@@ -353,7 +467,7 @@ sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out) {
     s->capture_source = r->capture_str;
     s->container_format = r->container;
     s->filename = r->filename;
-    s->record_cursor = true;
+    s->record_cursor = config->record_cursor ? true : false;
     s->keyint = 2.0;
     s->fps = config->fps;
     s->audio_bitrate = 0;
@@ -516,6 +630,12 @@ sgsr_error sgsr_start(const sgsr_config *config, sgsr_recorder **out) {
             goto fail;
         }
         r->thread_started = true;
+        /* VU meter polling (SDK LevelMeter events, 10Hz, only when on_event set). */
+        if(r->on_event) {
+            atomic_store(&r->level_running, 1);
+            if(pthread_create(&r->level_thread, NULL, sgsr_level_thread, r) == 0)
+                r->level_started = true;
+        }
     }
 
     atomic_store(&r->state, SGSR_STATE_RECORDING);
@@ -529,6 +649,7 @@ fail:
     free(r->filename);
     free(r->replay_dir);
     free(r->capture_str);
+    free(r->portal_token_path);
     if(r->audio_strs) {
         for(int i = 0; i < r->num_audio_strs; ++i)
             free(r->audio_strs[i]);
@@ -551,6 +672,7 @@ sgsr_error sgsr_stop(sgsr_recorder *r) {
     free(r->filename);
     free(r->replay_dir);
     free(r->capture_str);
+    free(r->portal_token_path);
     if(r->audio_strs) {
         for(int i = 0; i < r->num_audio_strs; ++i)
             free(r->audio_strs[i]);
@@ -596,6 +718,8 @@ sgsr_error sgsr_screenshot(sgsr_recorder *r, const char *path) {
     pthread_mutex_lock(&r->screenshot_mutex);
     gsr_recorder_settings shot_settings = r->settings;
     shot_settings.filename = path;
+    static atomic_int sgsr_shot_running = 1;
+    atomic_store(&sgsr_shot_running, 1);
     gsr_screenshot_params params;
     memset(&params, 0, sizeof(params));
     params.settings = &shot_settings;
@@ -604,6 +728,7 @@ sgsr_error sgsr_screenshot(sgsr_recorder *r, const char *path) {
     params.capture_deps = &r->capture_deps;
     params.capture_sources = &r->capture_sources;
     params.image_format = GSR_IMAGE_FORMAT_JPEG;
+    params.running = &sgsr_shot_running;
     get_image_format_from_filename(path, &params.image_format);
     int ret = gsr_screenshot_take(&params);
     pthread_mutex_unlock(&r->screenshot_mutex);

@@ -42,7 +42,7 @@ namespace gsr {
             int error;
 
             /* Create a new playback stream */
-            if(!(s = pa_simple_new(NULL, "gsr-ui-audio-playback", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &error))) {
+            if(!(s = pa_simple_new(NULL, "sgsr-ui-audio-playback", PA_STREAM_PLAYBACK, NULL, "playback", &ss, NULL, NULL, &error))) {
                 fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
                 goto finish;
             }
